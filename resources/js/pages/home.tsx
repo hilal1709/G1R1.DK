@@ -2,12 +2,45 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 
-interface HomeProps {
-  featuredProducts?: any[];
-  upcomingEvents?: any[];
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  stock: number;
+  category: string;
 }
 
-export default function Home({ featuredProducts = [], upcomingEvents = [] }: HomeProps) {
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  image: string;
+  max_participants: number;
+  current_participants: number;
+}
+
+interface Article {
+  id: number;
+  title: string;
+  excerpt: string;
+  content: string;
+  image: string;
+  published_at: string;
+  author: string;
+}
+
+interface HomeProps {
+  products: Product[];
+  events: Event[];
+  articles: Article[];
+}
+
+export default function Home({ products, events, articles }: HomeProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const heroSlides = [
@@ -33,7 +66,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
       description: "Mendukung pengrajin lokal untuk terus berkarya dan berinovasi",
       image: "/images/hero-3.jpg",
       cta: "Tentang Kami",
-      ctaLink: "#about"
+      ctaLink: "#tentang"
     }
   ];
 
@@ -42,7 +75,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
@@ -66,11 +99,8 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
             <div className="hidden md:flex items-center space-x-8">
               <a href="#beranda" className="text-gray-700 hover:text-amber-600 transition-colors">Beranda</a>
               <a href="#tentang" className="text-gray-700 hover:text-amber-600 transition-colors">Tentang</a>
-              <Link href="/products" className="text-gray-700 hover:text-amber-600 transition-colors">Produk</Link>
-              <Link href="/events" className="text-gray-700 hover:text-amber-600 transition-colors">Event</Link>
-              <Link href="/games" className="text-gray-700 hover:text-amber-600 transition-colors">Games</Link>
-              <Link href="/contact" className="text-gray-700 hover:text-amber-600 transition-colors">Kontak</Link>
-              <Link href="/about" className="text-gray-700 hover:text-amber-600 transition-colors">About</Link>
+              <a href="#produk" className="text-gray-700 hover:text-amber-600 transition-colors">Produk</a>
+              <a href="#event" className="text-gray-700 hover:text-amber-600 transition-colors">Event</a>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -202,7 +232,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Tentang <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Kami</span>
+              Profil <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Perusahaan</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Melestarikan tradisi, mengembangkan inovasi, dan memanfaatkan teknologi untuk kemajuan UMKM
@@ -216,7 +246,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
               viewport={{ once: true }}
               className="space-y-6"
             >
-              <h3 className="text-3xl font-bold text-gray-900">Profile Perusahaan</h3>
+              <h3 className="text-3xl font-bold text-gray-900">Tentang Kami</h3>
               <p className="text-gray-600 leading-relaxed">
                 Damar Kurung Gresik adalah UMKM yang bergerak dalam bidang kerajinan lentera tradisional khas Gresik.
                 Kami telah berdiri sejak tahun 1995 dan terus berkembang hingga saat ini, memproduksi berbagai jenis
@@ -416,7 +446,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
         </div>
       </section>
 
-      {/* Produk Unggulan Section */}
+      {/* Profile Produk Section */}
       <section id="produk" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -426,7 +456,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Produk <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Unggulan</span>
+              Profile <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Produk</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Koleksi Damar Kurung terbaik dengan berbagai ukuran dan desain
@@ -434,49 +464,48 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {[
-              {
-                name: "Damar Kurung Klasik",
-                image: "/images/product-1.jpg",
-                price: "Rp 150.000",
-                desc: "Desain tradisional dengan motif klasik"
-              },
-              {
-                name: "Damar Kurung Modern",
-                image: "/images/product-2.jpg",
-                price: "Rp 200.000",
-                desc: "Perpaduan tradisi dan gaya kontemporer"
-              },
-              {
-                name: "Damar Kurung Premium",
-                image: "/images/product-3.jpg",
-                price: "Rp 350.000",
-                desc: "Kualitas terbaik dengan detail sempurna"
-              }
-            ].map((product, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
-              >
-                <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
-                  <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
-                  <p className="text-gray-600 mb-4">{product.desc}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-amber-600">{product.price}</span>
-                    <button className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
-                      Lihat Detail
-                    </button>
+            {products && products.length > 0 ? (
+              products.slice(0, 6).map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+                >
+                  <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/product-placeholder.jpg';
+                      }}
+                    />
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-amber-600">
+                        Rp {product.price.toLocaleString('id-ID')}
+                      </span>
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all"
+                      >
+                        Lihat Detail
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <p className="text-gray-500 text-lg">Belum ada produk tersedia</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center">
@@ -509,7 +538,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
 
           {/* Mitra */}
           <div className="mb-16">
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Mitra Kami</h3>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Mitra Perusahaan</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <motion.div
@@ -531,7 +560,7 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
 
           {/* Sertifikasi */}
           <div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Sertifikasi & Penghargaan</h3>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Sertifikasi Perusahaan</h3>
             <div className="grid md:grid-cols-4 gap-8">
               {[
                 { title: "Sertifikat PIRT", desc: "Produksi Pangan Industri Rumah Tangga" },
@@ -579,66 +608,72 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {[
-              {
-                title: "Workshop Membuat Damar Kurung",
-                date: "15 Desember 2025",
-                location: "Gresik, Jawa Timur",
-                image: "/images/event-1.jpg",
-                status: "upcoming"
-              },
-              {
-                title: "Pameran Seni & Budaya",
-                date: "20 Desember 2025",
-                location: "Jakarta Convention Center",
-                image: "/images/event-2.jpg",
-                status: "upcoming"
-              },
-              {
-                title: "Festival Damar Kurung",
-                date: "1 Januari 2026",
-                location: "Alun-alun Gresik",
-                image: "/images/event-3.jpg",
-                status: "upcoming"
-              }
-            ].map((event, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
-              >
-                <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
-                  <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute top-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                    Mendatang
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{event.title}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{event.date}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>{event.location}</span>
+            {events && events.length > 0 ? (
+              events.slice(0, 3).map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+                >
+                  <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/event-placeholder.jpg';
+                      }}
+                    />
+                    <div className="absolute top-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                      Mendatang
                     </div>
                   </div>
-                  <button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-full font-semibold hover:shadow-lg transition-all">
-                    Daftar Sekarang
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{event.title}</h3>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-gray-600">
+                        <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{new Date(event.date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })} - {event.time}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>{event.location}</span>
+                      </div>
+                      {event.max_participants > 0 && (
+                        <div className="flex items-center text-gray-600">
+                          <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span>{event.current_participants} / {event.max_participants} peserta</span>
+                        </div>
+                      )}
+                    </div>
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="block w-full text-center bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-full font-semibold hover:shadow-lg transition-all"
+                    >
+                      Lihat Detail
+                    </Link>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <p className="text-gray-500 text-lg">Belum ada event tersedia</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center">
@@ -698,10 +733,8 @@ export default function Home({ featuredProducts = [], upcomingEvents = [] }: Hom
               <ul className="space-y-2">
                 <li><a href="#beranda" className="text-gray-400 hover:text-amber-500 transition-colors">Beranda</a></li>
                 <li><a href="#tentang" className="text-gray-400 hover:text-amber-500 transition-colors">Tentang Kami</a></li>
-                <li><Link href="/products" className="text-gray-400 hover:text-amber-500 transition-colors">Produk</Link></li>
-                <li><Link href="/events" className="text-gray-400 hover:text-amber-500 transition-colors">Event</Link></li>
-                <li><Link href="/games" className="text-gray-400 hover:text-amber-500 transition-colors">Games</Link></li>
-                <li><a href="#kontak" className="text-gray-400 hover:text-amber-500 transition-colors">Kontak</a></li>
+                <li><a href="#produk" className="text-gray-400 hover:text-amber-500 transition-colors">Produk</a></li>
+                <li><a href="#event" className="text-gray-400 hover:text-amber-500 transition-colors">Event</a></li>
               </ul>
             </div>
 

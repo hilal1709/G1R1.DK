@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
+import PublicNavbar from '@/components/PublicNavbar';
+import { Edit, Trash2, Plus } from 'lucide-react';
 
 interface Event {
   id: number;
@@ -22,8 +24,17 @@ interface Event {
 interface Props {
   events: {
     data: Event[];
-    links: any;
-    meta: any;
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+    meta: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+    };
   };
   filters: {
     search?: string;
@@ -34,6 +45,7 @@ interface Props {
 export default function EventsIndex({ events, filters }: Props) {
   const [search, setSearch] = useState(filters.search || '');
   const [status, setStatus] = useState(filters.status || '');
+  const { auth } = usePage().props as any;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +53,14 @@ export default function EventsIndex({ events, filters }: Props) {
       preserveState: true,
       preserveScroll: true,
     });
+  };
+
+  const handleDelete = (slug: string, title: string) => {
+    if (confirm(`Apakah Anda yakin ingin mengin event "${title}"?`)) {
+      router.delete(`/events/${slug}`, {
+        preserveScroll: true,
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -73,28 +93,7 @@ export default function EventsIndex({ events, filters }: Props) {
       <Head title="Event UMKM - Damar Kurung Gresik" />
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-        {/* Navigation */}
-        <nav className="bg-white shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">DK</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                  Damar Kurung
-                </span>
-              </Link>
-
-              <div className="flex items-center space-x-6">
-                <Link href="/" className="text-gray-700 hover:text-amber-600">Beranda</Link>
-                <Link href="/products" className="text-gray-700 hover:text-amber-600">Produk</Link>
-                <Link href="/events" className="text-amber-600 font-semibold">Event</Link>
-                <Link href="/login" className="text-gray-700 hover:text-amber-600">Masuk</Link>
-              </div>
-            </div>
-          </div>
-        </nav>
+        <PublicNavbar activeMenu="/events" />
 
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
@@ -120,18 +119,28 @@ export default function EventsIndex({ events, filters }: Props) {
         {/* Search & Filter */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-12">
           <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Cari Event</h2>
+              <Link
+                href="/events/create"
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Buat Event Baru
+              </Link>
+            </div>
             <form onSubmit={handleSearch} className="flex gap-4">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari event..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
               />
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
               >
                 <option value="">Semua Status</option>
                 <option value="upcoming">Mendatang</option>
@@ -150,7 +159,7 @@ export default function EventsIndex({ events, filters }: Props) {
 
         {/* Events Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-          {events.data.length > 0 ? (
+          {events?.data && events.data.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {events.data.map((event, index) => (
@@ -159,12 +168,48 @@ export default function EventsIndex({ events, filters }: Props) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    className="relative"
                   >
+                    {/* Admin Action Buttons */}
+                    {auth?.user && (
+                      <div className="absolute top-2 right-2 z-10 flex gap-2">
+                        <Link
+                          href={`/events/${event.slug}/edit`}
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg transition-all"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(event.slug, event.title);
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
                     <Link href={`/events/${event.slug}`}>
                       <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group h-full flex flex-col">
                         {/* Image */}
                         <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
-                          <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
+                          {event.image ? (
+                            <img
+                              src={`/storage/${event.image}`}
+                              alt={event.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
                           <div className="absolute top-4 right-4">
                             {getStatusBadge(event.status)}
                           </div>
@@ -233,10 +278,10 @@ export default function EventsIndex({ events, filters }: Props) {
               </div>
 
               {/* Pagination */}
-              {events.meta.last_page > 1 && (
+              {events?.meta?.last_page && events.meta.last_page > 1 && (
                 <div className="mt-12 flex justify-center">
                   <div className="flex gap-2">
-                    {events.links.map((link: any, index: number) => (
+                    {events.links.map((link, index: number) => (
                       <button
                         key={index}
                         onClick={() => link.url && router.get(link.url)}

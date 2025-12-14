@@ -38,6 +38,17 @@ class Event extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function registrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+    public function participants()
+    {
+        return $this->belongsToMany(User::class, 'event_registrations')
+            ->withTimestamps();
+    }
+
     // Scopes
     public function scopeUpcoming($query)
     {

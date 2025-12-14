@@ -13,27 +13,61 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import {
+    LayoutGrid,
+    FileText,
+    Calendar,
+    ShoppingBag,
+    Gamepad2,
+    Users,
+    MessageSquare,
+    Info
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Beranda',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Artikel',
+        href: '/articles',
+        icon: FileText,
+    },
+    {
+        title: 'Event',
+        href: '/events',
+        icon: Calendar,
+    },
+    {
+        title: 'Produk',
+        href: '/products',
+        icon: ShoppingBag,
+    },
+    {
+        title: 'Games',
+        href: '/games',
+        icon: Gamepad2,
+    },
+    {
+        title: 'Tentang Kami',
+        href: '/about',
+        icon: Info,
+    },
+    {
+        title: 'Kontak',
+        href: '/contact',
+        icon: MessageSquare,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Keranjang',
+        href: '/cart',
+        icon: ShoppingBag,
     },
 ];
 

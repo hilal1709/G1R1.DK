@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Set SVG MIME type
+    AddType image/svg+xml .svg
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

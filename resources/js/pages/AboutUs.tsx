@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
+import PublicNavbar from '@/components/PublicNavbar';
 
 export default function AboutUs() {
   const team = [
@@ -79,29 +80,7 @@ export default function AboutUs() {
       <Head title="Tentang Kami - Damar Kurung Gresik" />
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-        {/* Navigation */}
-        <nav className="bg-white shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">DK</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                  Damar Kurung
-                </span>
-              </Link>
-
-              <div className="flex items-center space-x-6">
-                <Link href="/" className="text-gray-700 hover:text-amber-600">Beranda</Link>
-                <Link href="/products" className="text-gray-700 hover:text-amber-600">Produk</Link>
-                <Link href="/events" className="text-gray-700 hover:text-amber-600">Event</Link>
-                <Link href="/about" className="text-amber-600 font-semibold">Tentang</Link>
-                <Link href="/contact" className="text-gray-700 hover:text-amber-600">Kontak</Link>
-              </div>
-            </div>
-          </div>
-        </nav>
+        <PublicNavbar activeMenu="/about" />
 
         {/* Hero */}
         <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-20 text-white">

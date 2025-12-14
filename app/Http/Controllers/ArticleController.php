@@ -43,11 +43,15 @@ class ArticleController extends Controller
             'category' => 'nullable|string|max:255',
             'excerpt' => 'nullable|string',
             'is_published' => 'boolean',
-            'published_at' => 'nullable|date',
         ]);
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('articles', 'public');
+        }
+
+        // Set published_at otomatis jika artikel dipublikasikan
+        if ($request->is_published) {
+            $validated['published_at'] = now();
         }
 
         Article::create($validated);

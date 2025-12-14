@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
+import PublicNavbar from '@/components/PublicNavbar';
 
 interface Product {
   id: number;
@@ -20,8 +21,17 @@ interface Product {
 interface Props {
   products: {
     data: Product[];
-    links: any;
-    meta: any;
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+    meta: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+    };
   };
   filters: {
     search?: string;
@@ -75,28 +85,7 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
       <Head title="Katalog Produk - Damar Kurung Gresik" />
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-        {/* Navigation */}
-        <nav className="bg-white shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">DK</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                  Damar Kurung
-                </span>
-              </Link>
-
-              <div className="flex items-center space-x-6">
-                <Link href="/" className="text-gray-700 hover:text-amber-600">Beranda</Link>
-                <Link href="/products" className="text-amber-600 font-semibold">Produk</Link>
-                <Link href="/events" className="text-gray-700 hover:text-amber-600">Event</Link>
-                <Link href="/login" className="text-gray-700 hover:text-amber-600">Masuk</Link>
-              </div>
-            </div>
-          </div>
-        </nav>
+        <PublicNavbar activeMenu="/products" />
 
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
@@ -318,7 +307,7 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                   {products.meta.last_page > 1 && (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
-                        {products.links.map((link: any, index: number) => (
+                        {products.links.map((link, index: number) => (
                           <button
                             key={index}
                             onClick={() => link.url && router.get(link.url)}

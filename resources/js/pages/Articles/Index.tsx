@@ -13,6 +13,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import PublicNavbar from '@/components/PublicNavbar';
 
 interface Article {
     id: number;
@@ -31,7 +32,11 @@ interface Article {
 interface PageProps {
     articles: {
         data: Article[];
-        links: any[];
+        links: {
+            url: string | null;
+            label: string;
+            active: boolean;
+        }[];
         current_page: number;
         last_page: number;
         per_page: number;
@@ -60,44 +65,47 @@ export default function ArticlesIndex({ articles }: PageProps) {
         <>
             <Head title="Kelola Artikel" />
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+            <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+                <PublicNavbar activeMenu="/articles" />
+
                 {/* Header */}
-                <div className="bg-white shadow-sm border-b">
-                    <div className="container mx-auto px-4 py-6">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800">
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-4xl md:text-5xl font-bold mb-2"
+                                >
                                     Kelola Artikel
-                                </h1>
-                                <p className="text-gray-600 mt-1">
+                                </motion.h1>
+                                <motion.p
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="text-amber-100 text-lg"
+                                >
                                     Tambah, edit, dan hapus artikel Damar Kurung
-                                </p>
+                                </motion.p>
                             </div>
-                            <div className="flex gap-3">
-                                <Link
-                                    href="/dashboard"
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    Kembali
-                                </Link>
-                                <Link
-                                    href="/articles/create"
-                                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
-                                >
-                                    <Plus className="h-5 w-5" />
-                                    Tambah Artikel
-                                </Link>
-                            </div>
+                            <Link
+                                href="/articles/create"
+                                className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
+                            >
+                                <Plus className="h-5 w-5" />
+                                Tambah Artikel
+                            </Link>
                         </div>
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     {/* Search & Filter */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-xl shadow-md p-6 mb-8"
+                        className="bg-white rounded-xl shadow-lg border border-amber-100 p-6 mb-8"
                     >
                         <div className="flex items-center gap-4">
                             <div className="flex-1 relative">
@@ -109,7 +117,7 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                     onChange={(e) =>
                                         setSearchQuery(e.target.value)
                                     }
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    className="w-full pl-10 pr-4 py-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-gray-900"
                                 />
                             </div>
                             <div className="text-sm text-gray-600">
@@ -126,10 +134,10 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="group bg-white rounded-xl shadow-md hover:shadow-2xl transition-all overflow-hidden"
+                                className="group bg-white rounded-xl border border-amber-100 shadow-lg hover:shadow-xl transition-all overflow-hidden"
                             >
                                 {/* Image */}
-                                <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100 overflow-hidden">
+                                <div className="relative h-48 bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                                     {article.image ? (
                                         <img
                                             src={`/storage/${article.image}`}
@@ -138,7 +146,7 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                         />
                                     ) : (
                                         <div className="flex items-center justify-center h-full">
-                                            <Tag className="h-16 w-16 text-blue-300" />
+                                            <Tag className="h-16 w-16 text-amber-300" />
                                         </div>
                                     )}
 
@@ -160,7 +168,7 @@ export default function ArticlesIndex({ articles }: PageProps) {
 
                                 {/* Content */}
                                 <div className="p-5">
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                    <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
                                         {article.title}
                                     </h3>
 
@@ -200,14 +208,14 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                     <div className="flex gap-2">
                                         <Link
                                             href={`/articles/${article.id}`}
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors font-semibold"
                                         >
                                             <Eye className="h-4 w-4" />
                                             Lihat
                                         </Link>
                                         <Link
                                             href={`/articles/${article.id}/edit`}
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors"
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-semibold"
                                         >
                                             <Edit className="h-4 w-4" />
                                             Edit
