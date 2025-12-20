@@ -20,8 +20,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'google_id',
+        'avatar',
+        'role',
     ];
 
     /**
@@ -49,4 +53,12 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+
+    
+    
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
 }
