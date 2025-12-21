@@ -21,7 +21,7 @@ class ProductController extends Controller
         }
     }
     // Tampilkan semua produk
-    public function index()
+    public function index(Request $request)
     {
         
         $query = Product::query();

@@ -14,7 +14,7 @@ class EventController extends Controller
 {
     protected $user;
 
-    public function index()
+    public function index(Request $request)
     {
         $query = Event::query();
 
