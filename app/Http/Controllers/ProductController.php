@@ -21,14 +21,13 @@ class ProductController extends Controller
         }
     }
     // Tampilkan semua produk
-    public function index()
+    public function index(Request $request)
     {
-        
         $query = Product::query();
 
         // Search
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%' . $request->search . '%');
         }
 
         // Filter by category
@@ -40,11 +39,11 @@ class ProductController extends Controller
 
         // Filter by price range
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('harga', '>=', $request->min_price);
         }
 
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+            $query->where('harga', '<=', $request->max_price);
         }
 
         // Sort
@@ -52,10 +51,10 @@ class ProductController extends Controller
 
         switch ($sortBy) {
             case 'price_low':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('harga', 'asc');
                 break;
             case 'price_high':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('harga', 'desc');
                 break;
             default:
                 $query->latest();
@@ -66,8 +65,11 @@ class ProductController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return view('products.index', [
+        $categories = Category::all();
+
+        return Inertia::render('Products/Index', [
             'products' => $products,
+            'categories' => $categories,
             'filters' => $request->only(['search', 'category', 'min_price', 'max_price', 'sort']),
         ]);
     }
@@ -77,7 +79,7 @@ class ProductController extends Controller
     {
         // Load relasi category dan images
         $product->load('category', 'images');
-        
+
         return Inertia::render('Products/Show', [
             'product' => $product,
         ]);

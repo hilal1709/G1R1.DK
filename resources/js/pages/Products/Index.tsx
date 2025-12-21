@@ -3,62 +3,74 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import { ShoppingCart, Search, Filter, ChevronDown } from 'lucide-react';
+
+interface ProductImage {
+  id: number;
+  path: string;
+}
+
+interface Category {
+  id: number;
+  nama: string;
+}
 
 interface Product {
   id: number;
-  name: string;
-  slug: string;
-  short_description: string;
-  price: number;
-  discount_price: number | null;
-  images: string[];
-  category: string;
-  rating: number;
-  total_reviews: number;
-  stock: number;
+  nama: string;
+  deskripsi: string;
+  harga: number;
+  stok: number;
+  category?: Category;
+  images?: ProductImage[];
 }
 
 interface Props {
-  products?: {
-    data: Product[];
-    links: {
-      url: string | null;
-      label: string;
-      active: boolean;
-    }[];
-    meta: {
-      current_page: number;
-      last_page: number;
-      per_page: number;
-      total: number;
-    };
-  };
+  products?: any; // Laravel pagination object
+  categories?: Category[];
   filters?: {
     search?: string;
     category?: string;
-    min_price?: number;
-    max_price?: number;
+    min_price?: string;
+    max_price?: string;
     sort?: string;
   };
-  categories?: string[];
+  auth?: {
+    user?: {
+      name: string;
+      email: string;
+      role: string;
+    };
+  };
 }
 
-export default function ProductsIndex({ products, filters = {}, categories = [] }: Props) {
-  console.log('ProductsIndex props:', { products, filters, categories });
-
-  const [search, setSearch] = useState<string>(filters?.search ?? '');
-  const [selectedCategory, setSelectedCategory] = useState<string>(filters?.category ?? '');
-  const [minPrice, setMinPrice] = useState<string | number>(filters?.min_price ?? '');
-  const [maxPrice, setMaxPrice] = useState<string | number>(filters?.max_price ?? '');
-  const [sortBy, setSortBy] = useState<string>(filters?.sort ?? 'latest');
-
-  // Ensure products has default structure
-  const safeProducts = products ?? { data: [], links: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } };
+export default function ProductsIndex({ products, filters, categories, auth }: Props) {
+  console.log('Received props:', { products, filters, categories, auth });
+  
+  // Laravel pagination structure: { data: [], links: [], current_page, last_page, etc. }
+  const safeProducts = {
+    data: Array.isArray(products?.data) ? products.data : [],
+    current_page: products?.current_page ?? 1,
+    last_page: products?.last_page ?? 1,
+    per_page: products?.per_page ?? 12,
+    total: products?.total ?? 0,
+    links: Array.isArray(products?.links) ? products.links : []
+  };
   const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeFilters = typeof filters === 'object' && filters !== null && !Array.isArray(filters) ? filters : {};
+
+  console.log('Safe data:', { safeProducts, safeCategories, safeFilters });
+
+  const [searchQuery, setSearchQuery] = useState(safeFilters.search ?? '');
+  const [selectedCategory, setSelectedCategory] = useState(safeFilters.category ?? '');
+  const [minPrice, setMinPrice] = useState(safeFilters.min_price ?? '');
+  const [maxPrice, setMaxPrice] = useState(safeFilters.max_price ?? '');
+  const [sortBy, setSortBy] = useState(safeFilters.sort ?? 'latest');
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleFilter = () => {
     router.get('/products', {
-      search,
+      search: searchQuery,
       category: selectedCategory,
       min_price: minPrice,
       max_price: maxPrice,
@@ -70,7 +82,7 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
   };
 
   const handleReset = () => {
-    setSearch('');
+    setSearchQuery('');
     setSelectedCategory('');
     setMinPrice('');
     setMaxPrice('');
@@ -84,6 +96,13 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  const getProductImage = (product: Product) => {
+    if (product.images && product.images.length > 0) {
+      return `/storage/${product.images[0].path}`;
+    }
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
   };
 
   return (
@@ -129,10 +148,11 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
                   </label>
                   <input
                     type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
                     placeholder="Nama produk..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                   />
                 </div>
 
@@ -144,11 +164,11 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                   >
                     <option value="">Semua Kategori</option>
                     {safeCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat.id} value={cat.nama}>{cat.nama}</option>
                     ))}
                   </select>
                 </div>
@@ -164,14 +184,14 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
                       placeholder="Min"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                     />
                     <input
                       type="number"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
                       placeholder="Max"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                     />
                   </div>
                 </div>
@@ -184,13 +204,11 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                   >
                     <option value="latest">Terbaru</option>
                     <option value="price_low">Harga: Rendah ke Tinggi</option>
                     <option value="price_high">Harga: Tinggi ke Rendah</option>
-                    <option value="popular">Paling Populer</option>
-                    <option value="rating">Rating Tertinggi</option>
                   </select>
                 </div>
 
@@ -217,32 +235,40 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
               {/* Results Info */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-gray-600">
-                  Menampilkan {safeProducts.data.length} dari {safeProducts.meta.total} produk
+                  Menampilkan {safeProducts.data.length} dari {safeProducts.total} produk
                 </p>
               </div>
 
               {/* Products */}
-              {safeProducts.data.length > 0 ? (
+              {safeProducts.data && safeProducts.data.length > 0 ? (
                 <>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {safeProducts.data.map((product, index) => (
+                    {safeProducts.data.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Link href={`/products/${product.slug}`}>
+                        <Link href={`/products/${product.id}`}>
                           <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group">
                             {/* Image */}
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
-                              <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
-                              {product.discount_price && (
-                                <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                                  {Math.round(((product.price - product.discount_price) / product.price) * 100)}% OFF
+                              <img
+                                src={getProductImage(product)}
+                                alt={product.nama}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
+                                }}
+                              />
+                              {product.stok <= 5 && product.stok > 0 && (
+                                <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                                  Stok Terbatas
                                 </div>
                               )}
-                              {product.stock === 0 && (
+                              {product.stok === 0 && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                   <span className="text-white font-bold text-xl">Stok Habis</span>
                                 </div>
@@ -251,56 +277,29 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
 
                             {/* Content */}
                             <div className="p-5">
-                              <div className="text-xs text-amber-600 font-semibold mb-2">{product.category}</div>
+                              {product.category && (
+                                <div className="text-xs text-amber-600 font-semibold mb-2">{product.category.nama}</div>
+                              )}
                               <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                {product.name}
+                                {product.nama}
                               </h3>
                               <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                {product.short_description}
+                                {product.deskripsi}
                               </p>
-
-                              {/* Rating */}
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <svg
-                                      key={i}
-                                      className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                                <span className="text-sm text-gray-600">
-                                  {product.rating} ({product.total_reviews})
-                                </span>
-                              </div>
 
                               {/* Price */}
                               <div className="flex items-center justify-between">
                                 <div>
-                                  {product.discount_price ? (
-                                    <>
-                                      <div className="text-sm text-gray-400 line-through">
-                                        {formatPrice(product.price)}
-                                      </div>
-                                      <div className="text-xl font-bold text-amber-600">
-                                        {formatPrice(product.discount_price)}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="text-xl font-bold text-amber-600">
-                                      {formatPrice(product.price)}
-                                    </div>
-                                  )}
+                                  <div className="text-xl font-bold text-amber-600">
+                                    {formatPrice(product.harga)}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Stok: {product.stok}
+                                  </div>
                                 </div>
-                                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </div>
+                                <button className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                  <ShoppingCart className="w-5 h-5 text-white" />
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -310,7 +309,7 @@ export default function ProductsIndex({ products, filters = {}, categories = [] 
                   </div>
 
                   {/* Pagination */}
-                  {safeProducts.meta.last_page > 1 && (
+                  {safeProducts.last_page > 1 && (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
                         {safeProducts.links.map((link, index: number) => (
