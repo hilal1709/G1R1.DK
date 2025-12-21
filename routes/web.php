@@ -27,23 +27,8 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 
-Route::get('/', function () {
-    return view('landing');
-})->name('home');
-
-Route::get('/damar-kurung', function () {
-    return Inertia::render('damar-kurung');
-})->name('damar-kurung');
-
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
-
-
 Route::middleware('auth','role:admin' )->group(function() {
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/register-admin', [AuthController::class, 'showRegisterForm']);
     Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
 
@@ -71,6 +56,26 @@ Route::middleware(['auth','role:member'])->group(function () {
 Route::middleware(['auth','role:member,admin'])->group(function () {
     //belom kepikiran
 });
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Contact and About pages
+Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/about', function () {
+    return Inertia::render('AboutUs');
+})->name('about');
+
+// Games
+Route::get('/games', function () {
+    return Inertia::render('Games/Index');
+})->name('games.index');
+Route::get('/games/mewarnai', function () {
+    return Inertia::render('Games/Mewarnai');
+})->name('games.mewarnai');
+Route::get('/games/animasi', function () {
+    return Inertia::render('Games/Animasi');
+})->name('games.animasi');
 
 Route::resource('articles', ArticleController::class)->only(['index','show']);
 Route::resource('events', EventController::class)->only(['index','show']);

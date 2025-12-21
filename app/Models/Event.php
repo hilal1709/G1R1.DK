@@ -13,9 +13,17 @@ class Event extends Model
     protected $fillable = [
         'nama',
         'lokasi',
-        'tanggal',
         'deskripsi',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'max_pendaftar',
+        'status',
         'user_id'
+    ];
+
+    protected $casts = [
+        'tanggal_mulai' => 'datetime',
+        'tanggal_selesai' => 'datetime',
     ];
 
     /**
@@ -24,6 +32,17 @@ class Event extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function registrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+    public function participants()
+    {
+        return $this->belongsToMany(User::class, 'event_registrations')
+            ->withTimestamps();
     }
 
     /**
@@ -40,5 +59,16 @@ class Event extends Model
     public function comments()
     {
         return $this->morphMany(Comment::class, 'target');
+    }
+
+    // Scopes
+    public function scopeUpcoming($query)
+    {
+        return $query->where('status', 'upcoming');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['upcoming', 'ongoing']);
     }
 }

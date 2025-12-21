@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Article extends Model
 {
+
     /** @use HasFactory<\Database\Factories\ArticleFactory> */
     use HasFactory;
 
@@ -39,5 +40,6 @@ class Article extends Model
         return $this->morphMany(Comment::class, 'target');
     }
     
+
 
 }

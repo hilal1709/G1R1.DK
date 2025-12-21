@@ -23,7 +23,6 @@ Dashboard web interaktif yang menampilkan informasi lengkap tentang **Damar Kuru
 - **Komunitas Digital**: Platform online untuk kolaborasi
 
 ### 3. **Section Pengembangan** 💡
-
 - **Desain Kontemporer**: Paduan motif tradisional dengan estetika modern
 - **Teknologi Produksi**: Efisiensi tanpa hilangkan sentuhan tangan
 - **Material Inovatif**: Eksplorasi bahan ramah lingkungan

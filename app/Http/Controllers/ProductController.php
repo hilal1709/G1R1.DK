@@ -7,6 +7,10 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
 
+use Inertia\Inertia;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 class ProductController extends Controller
 {
 
@@ -19,8 +23,53 @@ class ProductController extends Controller
     // Tampilkan semua produk
     public function index()
     {
-        $products = Product::with('category','images')->get();
-        return view('products.index', compact('products'));
+        
+        $query = Product::query();
+
+        // Search
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter by category
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('nama', $request->category);
+            });
+        }
+
+        // Filter by price range
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        // Sort
+        $sortBy = $request->get('sort', 'latest');
+
+        switch ($sortBy) {
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            default:
+                $query->latest();
+        }
+
+        $products = $query
+            ->with(['category', 'images'])
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('products.index', [
+            'products' => $products,
+            'filters' => $request->only(['search', 'category', 'min_price', 'max_price', 'sort']),
+        ]);
     }
 
     // Tampilkan detail produk
@@ -29,7 +78,9 @@ class ProductController extends Controller
         // Load relasi category dan images
         $product->load('category', 'images');
         
-        return view('products.show', compact('product'));
+        return Inertia::render('Products/Show', [
+            'product' => $product,
+        ]);
     }
 
     // Form tambah produk
@@ -37,7 +88,9 @@ class ProductController extends Controller
     {
         $this->forbidMember();
         $categories = Category::all();
-        return view('products.create', compact('categories'));
+        return Inertia::render('Products/Create', [
+            'categories' => $categories
+        ]);
     }
 
     // Simpan produk baru
@@ -50,6 +103,7 @@ class ProductController extends Controller
             'deskripsi' => 'nullable|string',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
+            'shopee_link' => 'nullable|url',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
@@ -62,6 +116,7 @@ class ProductController extends Controller
             'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
+            'shopee_link' => $request->shopee_link,
         ]);
 
 
@@ -83,7 +138,10 @@ class ProductController extends Controller
     {
         $this->forbidMember();
         $categories = Category::all();
-        return view('products.edit', compact('product','categories'));
+        return Inertia::render('Products/Edit', [
+            'product' => $product,
+            'categories' => $categories
+        ]);
     }
 
     // Update produk
@@ -96,12 +154,14 @@ class ProductController extends Controller
             'deskripsi' => 'nullable|string',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
+            'shopee_link' => 'nullable|url',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $this->forbidMember();
 
-        $product->update($request->only('nama','sku','category_id','deskripsi','harga','stok'));
+        $product->update($request->only('nama','sku','category_id','deskripsi','harga','stok','shopee_link'));
+
         // Replace gambar lama jika ada file baru
         if($request->has('replace_images')) {
             foreach($request->replace_images as $imageId => $file) {
@@ -150,7 +210,7 @@ class ProductController extends Controller
         }
 
         $product->delete();
-
         return redirect()->route('products.index')->with('success','Produk berhasil dihapus!');
+
     }
 }

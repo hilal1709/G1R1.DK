@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Article;
 use App\Models\ArticleMedia;
+use Inertia\Inertia;
+
+use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
@@ -13,8 +17,12 @@ class ArticleController extends Controller
     public function index()
     {
         
-        $articles = Article::with('articleMedias', 'comments.user')->get();
-        return view('articles.index', compact('articles'));
+        $articles = Article::with('articleMedias', 'comments.user')
+        ->latest('created_at') // urutkan berdasarkan tanggal terbaru
+        ->paginate(10); // paginate data artikel
+        return Inertia::render('Articles/Index', [
+            'articles' => $articles,
+        ]);
     }
 
     public function store(Request $request)
@@ -34,7 +42,7 @@ class ArticleController extends Controller
 
         if($request->hasFile('files')) {
             foreach($request->file('files') as $index => $file) {
-                $path = $file->store('uploads', 'public'); // simpan di storage/app/public/uploads
+                $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
                 $article->articleMedias()->create([
                     'file_path' => '/storage/'.$path, // path untuk diakses browser
                     'jenis' => $request->jenis[$index],
@@ -42,13 +50,18 @@ class ArticleController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Artikel berhasil dibuat!');
+        return redirect()->route('articles.index')
+            ->with('success', 'Artikel berhasil ditambahkan!');
     }
 
     public function show(Article $article)
     {
+        
+        $article = Article::findOrFail($id);
         $article->load('articleMedias', 'comments.user'); // tetap load relasi
-        return view('articles.show', compact('article')); // arahkan ke view
+        return Inertia::render('Articles/Show', [
+            'article' => $article,
+        ]);
     }
 
     public function update(Request $request, Article $article)
@@ -72,7 +85,7 @@ class ArticleController extends Controller
                     \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
 
                     // Simpan file baru
-                    $path = $file->store('uploads', 'public');
+                    $path = $file->store('uploads/articlemedia', 'public');
                     $media->update([
                         'file_path' => '/storage/' . $path,
                     ]);
@@ -96,7 +109,7 @@ class ArticleController extends Controller
         // Tambah media baru jika ada
         if($request->hasFile('files')) {
             foreach($request->file('files') as $index => $file) {
-                $path = $file->store('uploads', 'public'); // simpan di storage/app/public/uploads
+                $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
                 $article->articleMedias()->create([
                     'file_path' => '/storage/'.$path, // path untuk diakses browser
                     'jenis' => $request->jenis[$index],
@@ -104,7 +117,8 @@ class ArticleController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Artikel berhasil diupdate!');
+        return redirect()->route('articles.index')
+            ->with('success', 'Artikel berhasil diupdate!');
     }
 
     public function destroy(Article $article)
@@ -126,11 +140,13 @@ class ArticleController extends Controller
 
     public function create()
     {
-        return view('articles.create'); // blade view buat form
+        return Inertia::render('Articles/Create');
     }
 
     public function edit(Article $article)
     {
-        return view('articles.edit', compact('article'));
+        return Inertia::render('Articles/Edit', [
+            'article' => $article,
+        ]);
     }
 }

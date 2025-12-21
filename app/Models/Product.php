@@ -9,7 +9,15 @@ class Product extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
-    protected $fillable = ['category_id','nama','sku','deskripsi','harga','stok'];
+    protected $fillable = [
+        'category_id',
+        'nama',
+        'sku',
+        'deskripsi',
+        'harga',
+        'shopee_link',
+        'stok'
+    ];
 
     public function category()
     {
@@ -25,7 +33,7 @@ class Product extends Model
     {
         return $this->hasMany(ProductMarketplace::class);
     }
-
+    
     public function reviews()
     {
         return $this->hasMany(Review::class);
