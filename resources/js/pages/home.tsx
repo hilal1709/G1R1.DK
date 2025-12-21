@@ -104,18 +104,18 @@ export default function Home({ products, events, articles }: HomeProps) {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Link
+              <a
                 href="/login"
                 className="text-gray-700 hover:text-amber-600 transition-colors"
               >
                 Masuk
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/register"
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all"
               >
                 Daftar
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -480,7 +480,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
-                        e.currentTarget.src = '/images/product-placeholder.jpg';
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f59e0b" width="400" height="400"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="48" text-anchor="middle" x="200" y="220"%3EProduk%3C/text%3E%3C/svg%3E';
                       }}
                     />
                   </div>
@@ -624,7 +624,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
-                        e.currentTarget.src = '/images/event-placeholder.jpg';
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%2334d399" width="400" height="400"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="48" text-anchor="middle" x="200" y="220"%3EEvent%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     <div className="absolute top-4 right-4 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">

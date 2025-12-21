@@ -17,6 +17,19 @@ class Article extends Model
         'judul',
         'isi',
         'user_id',
+        'title',
+        'content',
+        'image',
+        'author',
+        'category',
+        'excerpt',
+        'is_published',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'published_at' => 'datetime',
+        'is_published' => 'boolean',
     ];
 
     /**
@@ -34,12 +47,12 @@ class Article extends Model
     {
         return $this->hasMany(ArticleMedia::class, 'article_id');
     }
-    
+
     public function comments()
     {
         return $this->morphMany(Comment::class, 'target');
     }
-    
+
 
 
 }

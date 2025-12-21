@@ -19,7 +19,7 @@ interface Product {
 }
 
 interface Props {
-  products: {
+  products?: {
     data: Product[];
     links: {
       url: string | null;
@@ -33,22 +33,28 @@ interface Props {
       total: number;
     };
   };
-  filters: {
+  filters?: {
     search?: string;
     category?: string;
     min_price?: number;
     max_price?: number;
     sort?: string;
   };
-  categories: string[];
+  categories?: string[];
 }
 
-export default function ProductsIndex({ products, filters, categories }: Props) {
-  const [search, setSearch] = useState(filters.search || '');
-  const [selectedCategory, setSelectedCategory] = useState(filters.category || '');
-  const [minPrice, setMinPrice] = useState(filters.min_price || '');
-  const [maxPrice, setMaxPrice] = useState(filters.max_price || '');
-  const [sortBy, setSortBy] = useState(filters.sort || 'latest');
+export default function ProductsIndex({ products, filters = {}, categories = [] }: Props) {
+  console.log('ProductsIndex props:', { products, filters, categories });
+
+  const [search, setSearch] = useState<string>(filters?.search ?? '');
+  const [selectedCategory, setSelectedCategory] = useState<string>(filters?.category ?? '');
+  const [minPrice, setMinPrice] = useState<string | number>(filters?.min_price ?? '');
+  const [maxPrice, setMaxPrice] = useState<string | number>(filters?.max_price ?? '');
+  const [sortBy, setSortBy] = useState<string>(filters?.sort ?? 'latest');
+
+  // Ensure products has default structure
+  const safeProducts = products ?? { data: [], links: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } };
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   const handleFilter = () => {
     router.get('/products', {
@@ -141,7 +147,7 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="">Semua Kategori</option>
-                    {categories.map((cat) => (
+                    {safeCategories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
@@ -211,15 +217,15 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
               {/* Results Info */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-gray-600">
-                  Menampilkan {products.data.length} dari {products.meta.total} produk
+                  Menampilkan {safeProducts.data.length} dari {safeProducts.meta.total} produk
                 </p>
               </div>
 
               {/* Products */}
-              {products.data.length > 0 ? (
+              {safeProducts.data.length > 0 ? (
                 <>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.data.map((product, index) => (
+                    {safeProducts.data.map((product, index) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -304,10 +310,10 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                   </div>
 
                   {/* Pagination */}
-                  {products.meta.last_page > 1 && (
+                  {safeProducts.meta.last_page > 1 && (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
-                        {products.links.map((link, index: number) => (
+                        {safeProducts.links.map((link, index: number) => (
                           <button
                             key={index}
                             onClick={() => link.url && router.get(link.url)}

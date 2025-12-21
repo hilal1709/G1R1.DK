@@ -5,6 +5,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
 
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleMediaController;
@@ -27,8 +30,8 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 
-Route::middleware('auth','role:admin' )->group(function() {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['auth','role:admin'])->group(function() {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/register-admin', [AuthController::class, 'showRegisterForm']);
     Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
 
@@ -93,7 +96,7 @@ Route::get('/login-admin', [AuthController::class, 'showLoginForm']);
 Route::post('/login-admin', [AuthController::class, 'loginAdmin']);
 
 Route::post('/logout', function () {
-    auth()->logout();
+    Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/'); // halaman landing

@@ -450,7 +450,7 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                                                 alt={product.name}
                                                 className="h-40 w-full object-cover"
                                                 onError={(e) => {
-                                                    e.currentTarget.src = '/images/product-placeholder.jpg';
+                                                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f59e0b" width="400" height="400"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="48" text-anchor="middle" x="200" y="220"%3EProduk%3C/text%3E%3C/svg%3E';
                                                 }}
                                             />
                                         ) : (

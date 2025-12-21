@@ -17,9 +17,14 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = Auth::user();
-        
 
-        if (!$user || !in_array($user->role, $roles)) {
+        // Jika belum login, redirect ke halaman login
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // Jika sudah login tapi role tidak sesuai, tampilkan 403
+        if (!in_array($user->role, $roles)) {
             abort(403, 'Unauthorized.');
         }
 

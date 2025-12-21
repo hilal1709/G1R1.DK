@@ -22,7 +22,10 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\LoginResponse::class,
+            \App\Http\Responses\LoginResponse::class
+        );
     }
 
     /**
@@ -34,6 +37,26 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+
+        // Custom redirect after login based on user role
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                return $user;
+            }
+        });
+
+        // Custom redirect based on role after login
+        \Laravel\Fortify\Fortify::redirects('login', function () {
+            $user = \Illuminate\Support\Facades\Auth::user();
+
+            if ($user && $user->role === 'admin') {
+                return '/dashboard';
+            }
+
+            return '/';
+        });
 
         $this->configureRateLimiting();
     }
