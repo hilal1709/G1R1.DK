@@ -4,38 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
-    use HasFactory, SoftDeletes;
+    /** @use HasFactory<\Database\Factories\EventFactory> */
+    use HasFactory;
 
     protected $fillable = [
-        'title',
-        'slug',
-        'description',
-        'short_description',
-        'image',
-        'location',
-        'start_date',
-        'end_date',
-        'max_participants',
-        'registered_participants',
+        'nama',
+        'lokasi',
+        'deskripsi',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'max_pendaftar',
         'status',
-        'is_featured',
-        'created_by',
+        'user_id'
     ];
 
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
-        'is_featured' => 'boolean',
+        'tanggal_mulai' => 'datetime',
+        'tanggal_selesai' => 'datetime',
     ];
 
-    // Relationships
-    public function creator()
+    /**
+     * Relasi ke user (penyelenggara/event creator)
+     */
+    public function user()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class);
     }
 
     public function registrations()
@@ -49,36 +45,30 @@ class Event extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Relasi ke media
+     */
+    public function eventMedias()
+    {
+        return $this->hasMany(EventMedia::class, 'event_id');
+    }
+
+    /**
+     * Relasi komentar (polimorfik)
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'target');
+    }
+
     // Scopes
     public function scopeUpcoming($query)
     {
         return $query->where('status', 'upcoming');
     }
 
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
-    }
-
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['upcoming', 'ongoing']);
-    }
-
-    // Accessors
-    public function getIsFullAttribute()
-    {
-        if ($this->max_participants === null) {
-            return false;
-        }
-        return $this->registered_participants >= $this->max_participants;
-    }
-
-    public function getAvailableSlotsAttribute()
-    {
-        if ($this->max_participants === null) {
-            return null;
-        }
-        return $this->max_participants - $this->registered_participants;
     }
 }

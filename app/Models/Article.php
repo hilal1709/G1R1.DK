@@ -2,34 +2,44 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Article extends Model
 {
+
+    /** @use HasFactory<\Database\Factories\ArticleFactory> */
+    use HasFactory;
+
+    protected $table = 'articles';
+
     protected $fillable = [
-        'title',
-        'content',
-        'image',
-        'author',
-        'category',
-        'excerpt',
-        'is_published',
-        'published_at',
+        'judul',
+        'isi',
+        'user_id',
     ];
 
-    protected $casts = [
-        'is_published' => 'boolean',
-        'published_at' => 'datetime',
-    ];
-
-    public function scopePublished($query)
+    /**
+     * Relasi ke Admin (User)
+     */
+    public function user()
     {
-        return $query->where('is_published', true)
-            ->whereNotNull('published_at');
+        return $this->belongsTo(User::class);
     }
 
-    public function scopeLatest($query)
+    /**
+     * Relasi ke ArticleMedia
+     */
+    public function articleMedias()
     {
-        return $query->orderBy('published_at', 'desc');
+        return $this->hasMany(ArticleMedia::class, 'article_id');
     }
+    
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'target');
+    }
+    
+
+
 }

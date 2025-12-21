@@ -7,33 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
+    /** @use HasFactory<\Database\Factories\CartFactory> */
     use HasFactory;
+    
+    protected $fillable = ['user_id', 'user_session'];
 
-    protected $fillable = [
-        'user_id',
-        'product_id',
-        'quantity',
-        'price',
-    ];
-
-    protected $casts = [
-        'price' => 'decimal:2',
-    ];
-
-    // Relationships
-    public function user()
+    public function items()
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
-
-    // Accessors
-    public function getSubtotalAttribute()
-    {
-        return $this->quantity * $this->price;
+        return $this->hasMany(CartItem::class);
     }
 }

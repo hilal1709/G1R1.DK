@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->timestamp('registered_at')->useCurrent();
+            
             $table->timestamps();
 
             // Pastikan 1 user hanya bisa daftar 1 kali per event

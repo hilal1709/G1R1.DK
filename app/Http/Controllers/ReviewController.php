@@ -2,169 +2,143 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Review;
-use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Review;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ReviewController extends Controller
 {
+    protected $user;
+
+    
+
+    // Create review
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000',
-            'images' => 'nullable|array|max:3',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+        $request->validate([
+            'rating'      => 'required|integer|min:1|max:5',
+            'komentar'      => 'required|string|max:1000',
+            'product_id'  => 'required|exists:products,id',
+            'media' => 'required|file|mimes:jpg,jpeg,png,mp4,mov',
         ]);
 
-        // Check if user already reviewed this product
-        $userId = Auth::id();
-        $existingReview = Review::where('user_id', $userId)
-            ->where('product_id', $validated['product_id'])
+        // Cek apakah user sudah pernah review product ini
+        $existing = Review::where('product_id', $request->product_id)
+            ->where('user_id', auth()->id())
             ->first();
 
-        if ($existingReview) {
-            return back()->with('error', 'Anda sudah memberikan review untuk produk ini');
+        if ($existing) {
+            return back()->withErrors('Anda sudah membuat ulasan untuk produk ini.');
         }
 
-        // Handle image uploads
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('reviews', 'public');
-                $imagePaths[] = $path;
-            }
+        $review = new Review();
+        $review->user_id   = auth()->id();
+        $review->product_id = $request->product_id;
+        $review->rating    = $request->rating;
+        $review->komentar    = $request->komentar;
+        $review->save();
+
+        // Jika ada media (gambar/video) yang di-upload
+        if ($request->hasFile('media')) {
+            // Upload media
+            $path = $request->file('media')->store('uploads/review_media', 'public');
+
+            // Simpan informasi media terkait review
+            ReviewMedia::create([
+                'review_id'  => $review->id, // Menghubungkan media ke review
+                'file_path'  => '/storage/' . $path,
+                'media_type' => $request->file('media')->getClientMimeType(),
+            ]);
         }
 
-        Review::create([
-            'user_id' => $userId,
-            'product_id' => $validated['product_id'],
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'],
-            'images' => $imagePaths,
-            'is_approved' => false, // Admin approval required
-        ]);
-
-        // Update product rating
-        $this->updateProductRating($validated['product_id']);
-
-        return back()->with('success', 'Review berhasil dikirim! Menunggu persetujuan admin.');
+        return back()->with('success', 'Review berhasil ditambahkan!');
     }
 
+    // Update review (pakai JSON seperti punya kamu)
     public function update(Request $request, Review $review)
     {
-        // Check ownership
-        $userId = Auth::id();
-        if ($review->user_id !== $userId) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
+        $request->validate([
+            'komentar' => 'required|string|max:1000',
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000',
-            'images' => 'nullable|array|max:3',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+            'media'      => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
         ]);
 
-        // Handle new image uploads
-        $imagePaths = $review->images ?? [];
-        if ($request->hasFile('images')) {
-            // Delete old images
-            foreach ($imagePaths as $oldPath) {
-                Storage::disk('public')->delete($oldPath);
-            }
-
-            $imagePaths = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('reviews', 'public');
-                $imagePaths[] = $path;
-            }
+        if (auth()->id() !== $review->user_id) {
+            return abort(403, 'Kamu tidak punya izin untuk edit review ini.');
         }
 
-        $review->update([
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'],
-            'images' => $imagePaths,
-            'is_approved' => false, // Require re-approval
-        ]);
+        $review->komentar = $request->komentar;
+        $review->rating = $request->rating;
+        $review->save();
 
-        // Update product rating
-        $this->updateProductRating($review->product_id);
-
-        return back()->with('success', 'Review berhasil diupdate!');
+        // Jika ada file baru yang diupload
+    if ($request->hasFile('files')) {
+        foreach ($request->file('files') as $file) {
+            // Upload media baru
+            $path = $file->store('uploads/reviewmedia', 'public');
+            // Simpan file media baru di database
+            ReviewMedia::create([
+                'review_id' => $review->id,
+                'file_path' => '/storage/' . $path,
+                'media_type' => $file->getClientMimeType(),
+            ]);
+        }
     }
 
+    // Jika ada media yang ingin diganti
+    if ($request->has('replace_files')) {
+        foreach ($request->replace_files as $mediaId => $file) {
+            $media = ReviewMedia::find($mediaId);
+            if ($media && $file) {
+                // Hapus media lama dari storage
+                Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+
+                // Upload media baru
+                $path = $file->store('uploads/reviewmedia', 'public');
+
+                // Update path media yang lama
+                $media->update(['file_path' => '/storage/' . $path]);
+            }
+        }
+    }
+
+    // Hapus media yang dipilih
+    if ($request->has('delete_media')) {
+        foreach ($request->delete_media as $mediaId) {
+            $media = ReviewMedia::find($mediaId);
+            if ($media) {
+                // Hapus file lama dari storage
+                Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+
+                // Hapus data media dari database
+                $media->delete();
+            }
+        }
+    }
+
+        return response()->json(['success' => true]);
+    }
+
+
+    // Hapus review
     public function destroy(Review $review)
     {
-        // Check ownership
-        $userId = Auth::id();
-        if ($review->user_id !== $userId) {
-            abort(403);
+        if (auth()->id() !== $review->user_id) {
+            return abort(403, 'Kamu tidak punya izin untuk menghapus review ini.');
         }
 
-        // Delete images
-        if ($review->images) {
-            foreach ($review->images as $imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
+        // Hapus media terkait review jika ada
+        if ($review->media) {
+            // Hapus file dari storage
+            Storage::disk('public')->delete(str_replace('/storage/', '', $review->media->file_path));
+
+            // Hapus data media
+            $review->media->delete();
         }
 
-        $productId = $review->product_id;
         $review->delete();
-
-        // Update product rating
-        $this->updateProductRating($productId);
-
         return back()->with('success', 'Review berhasil dihapus!');
-    }
-
-    public function approve(Review $review)
-    {
-        $review->update(['is_approved' => true]);
-
-        return back()->with('success', 'Review berhasil disetujui!');
-    }
-
-    public function reject(Review $review)
-    {
-        // Delete images
-        if ($review->images) {
-            foreach ($review->images as $imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
-        }
-
-        $productId = $review->product_id;
-        $review->delete();
-
-        // Update product rating
-        $this->updateProductRating($productId);
-
-        return back()->with('success', 'Review berhasil ditolak dan dihapus!');
-    }
-
-    private function updateProductRating($productId)
-    {
-        $product = Product::findOrFail($productId);
-
-        $approvedReviews = Review::where('product_id', $productId)
-            ->where('is_approved', true)
-            ->get();
-
-        if ($approvedReviews->count() > 0) {
-            $averageRating = $approvedReviews->avg('rating');
-            $product->update([
-                'rating' => round($averageRating, 1),
-                'total_reviews' => $approvedReviews->count(),
-            ]);
-        } else {
-            $product->update([
-                'rating' => 0,
-                'total_reviews' => 0,
-            ]);
-        }
     }
 }

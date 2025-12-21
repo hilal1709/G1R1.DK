@@ -4,97 +4,49 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
-
+    /** @use HasFactory<\Database\Factories\ProductFactory> */
+    use HasFactory;
     protected $fillable = [
-        'name',
-        'slug',
-        'description',
-        'short_description',
-        'price',
-        'discount_price',
-        'stock',
+        'category_id',
+        'nama',
         'sku',
-        'category',
-        'images',
+        'deskripsi',
+        'harga',
         'shopee_link',
-        'is_featured',
-        'is_active',
-        'views',
-        'rating',
-        'total_reviews',
+        'stok'
     ];
 
-    protected $casts = [
-        'images' => 'array',
-        'price' => 'decimal:2',
-        'discount_price' => 'decimal:2',
-        'rating' => 'decimal:2',
-        'is_featured' => 'boolean',
-        'is_active' => 'boolean',
-    ];
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 
-    // Relationships
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+
+    public function marketplaceLinks()
+    {
+        return $this->hasMany(ProductMarketplace::class);
+    }
+    
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
 
-    public function carts()
+    public function averageRating()
     {
-        return $this->hasMany(Cart::class);
+        return $this->reviews()->avg('rating');
     }
 
-    // Scopes
-    public function scopeActive($query)
+    public function reviewCount()
     {
-        return $query->where('is_active', true);
+        return $this->reviews()->count();
     }
 
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
-    }
-
-    public function scopeInStock($query)
-    {
-        return $query->where('stock', '>', 0);
-    }
-
-    public function scopeByCategory($query, $category)
-    {
-        return $query->where('category', $category);
-    }
-
-    public function scopeSearch($query, $search)
-    {
-        return $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%")
-                ->orWhere('short_description', 'like', "%{$search}%");
-        });
-    }
-
-    // Accessors
-    public function getFinalPriceAttribute()
-    {
-        return $this->discount_price ?? $this->price;
-    }
-
-    public function getDiscountPercentageAttribute()
-    {
-        if ($this->discount_price && $this->price > 0) {
-            return round((($this->price - $this->discount_price) / $this->price) * 100);
-        }
-        return 0;
-    }
-
-    public function getIsOnSaleAttribute()
-    {
-        return $this->discount_price && $this->discount_price < $this->price;
-    }
 }

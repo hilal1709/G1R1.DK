@@ -7,43 +7,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
+    /** @use HasFactory<\Database\Factories\ReviewFactory> */
+
     use HasFactory;
 
     protected $fillable = [
         'product_id',
         'user_id',
         'rating',
-        'comment',
-        'images',
-        'is_verified_purchase',
-        'is_approved',
+        'komentar',
     ];
 
-    protected $casts = [
-        'images' => 'array',
-        'is_verified_purchase' => 'boolean',
-        'is_approved' => 'boolean',
-    ];
-
-    // Relationships
+    /**
+     * Relasi ke produk
+     */
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * Relasi ke user
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Scopes
-    public function scopeApproved($query)
+    public function reviewMedias()
     {
-        return $query->where('is_approved', true);
-    }
-
-    public function scopeVerifiedPurchase($query)
-    {
-        return $query->where('is_verified_purchase', true);
+        return $this->hasMany(ReviewMedia::class);
     }
 }

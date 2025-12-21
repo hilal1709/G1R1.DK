@@ -2,42 +2,54 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\Category;
+
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+
+    private function forbidMember()
     {
-        $query = Product::query()->active();
+        if (auth()->user()->role === 'member') {
+            abort(403, 'Member tidak punya akses.');
+        }
+    }
+    // Tampilkan semua produk
+    public function index()
+    {
+        
+        $query = Product::query();
 
         // Search
-        if ($request->has('search') && $request->search) {
-            $query->search($request->search);
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
         // Filter by category
-        if ($request->has('category') && $request->category) {
-            $query->byCategory($request->category);
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('nama', $request->category);
+            });
         }
 
         // Filter by price range
-        if ($request->has('min_price')) {
+        if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
-        if ($request->has('max_price')) {
+
+        if ($request->filled('max_price')) {
             $query->where('price', '<=', $request->max_price);
         }
 
         // Sort
         $sortBy = $request->get('sort', 'latest');
+
         switch ($sortBy) {
             case 'price_low':
                 $query->orderBy('price', 'asc');
@@ -45,168 +57,160 @@ class ProductController extends Controller
             case 'price_high':
                 $query->orderBy('price', 'desc');
                 break;
-            case 'popular':
-                $query->orderBy('views', 'desc');
-                break;
-            case 'rating':
-                $query->orderBy('rating', 'desc');
-                break;
             default:
                 $query->latest();
         }
 
-        $products = $query->with('reviews')->paginate(12);
+        $products = $query
+            ->with(['category', 'images'])
+            ->paginate(12)
+            ->withQueryString();
 
-        return Inertia::render('Products/Index', [
+        return view('products.index', [
             'products' => $products,
             'filters' => $request->only(['search', 'category', 'min_price', 'max_price', 'sort']),
-            'categories' => ['Klasik', 'Modern', 'Premium', 'Mini', 'Jumbo', 'Custom']
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return Inertia::render('Products/Create', [
-            'categories' => ['Klasik', 'Modern', 'Premium', 'Mini', 'Jumbo', 'Custom']
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'short_description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'stock' => 'required|integer|min:0',
-            'sku' => 'required|string|unique:products,sku',
-            'category' => 'required|string',
-            'images' => 'required|array|min:1',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-            'shopee_link' => 'nullable|url',
-            'is_featured' => 'boolean',
-        ]);
-
-        $validated['slug'] = Str::slug($validated['name']);
-
-        // Handle multiple image uploads
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $imagePaths[] = $path;
-            }
-        }
-        $validated['images'] = $imagePaths;
-
-        Product::create($validated);
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan!');
-    }
-
-    /**
-     * Display the specified resource.
-     */
+    // Tampilkan detail produk
     public function show(Product $product)
     {
-        // Increment views
-        $product->increment('views');
-
-        $product->load(['reviews' => function ($query) {
-            $query->approved()->with('user')->latest();
-        }]);
-
-        $relatedProducts = Product::active()
-            ->where('category', $product->category)
-            ->where('id', '!=', $product->id)
-            ->inStock()
-            ->limit(4)
-            ->get();
-
+        // Load relasi category dan images
+        $product->load('category', 'images');
+        
         return Inertia::render('Products/Show', [
             'product' => $product,
-            'relatedProducts' => $relatedProducts,
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Product $product)
+    // Form tambah produk
+    public function create()
     {
-        return Inertia::render('Products/Edit', [
-            'product' => $product,
-            'categories' => ['Klasik', 'Modern', 'Premium', 'Mini', 'Jumbo', 'Custom']
+        $this->forbidMember();
+        $categories = Category::all();
+        return Inertia::render('Products/Create', [
+            'categories' => $categories
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Product $product)
+    // Simpan produk baru
+    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'short_description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'stock' => 'required|integer|min:0',
-            'sku' => 'required|string|unique:products,sku,' . $product->id,
-            'category' => 'required|string',
+        $request->validate([
+            'nama' => 'required|string|max:200',
+            'sku' => 'required|string|max:100|unique:products,sku',
+            'category_id' => 'required|exists:categories,id',
+            'deskripsi' => 'nullable|string',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
             'shopee_link' => 'nullable|url',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-            'new_images' => 'nullable|array',
-            'new_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-            'existing_images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']);
+        $this->forbidMember();
 
-        // Handle images
-        $imagePaths = $request->get('existing_images', []);
+        $product = Product::create([
+            'nama' => $request->nama,
+            'sku' => $request->sku,
+            'category_id' => $request->category_id,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'stok' => $request->stok,
+            'shopee_link' => $request->shopee_link,
+        ]);
 
-        if ($request->hasFile('new_images')) {
-            foreach ($request->file('new_images') as $image) {
-                $path = $image->store('products', 'public');
-                $imagePaths[] = $path;
+
+        // Upload gambar banyak
+        if($request->hasFile('images')) {
+            foreach($request->file('images') as $image) {
+                $path = $image->store('products','public');
+                $product->images()->create([
+                    'gambar' => '/storage/'.$path
+                ]);
             }
         }
 
-        // Delete removed images
-        $oldImages = $product->images;
-        $removedImages = array_diff($oldImages, $imagePaths);
-        foreach ($removedImages as $removed) {
-            Storage::disk('public')->delete($removed);
-        }
-
-        $validated['images'] = $imagePaths;
-
-        $product->update($validated);
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil diupdate!');
+        return redirect()->route('products.index')->with('success', 'Produk berhasil dibuat!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Form edit produk
+    public function edit(Product $product)
+    {
+        $this->forbidMember();
+        $categories = Category::all();
+        return Inertia::render('Products/Edit', [
+            'product' => $product,
+            'categories' => $categories
+        ]);
+    }
+
+    // Update produk
+    public function update(Request $request, Product $product)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:200',
+            'sku' => 'required|string|max:100|unique:products,sku,' . $product->id,
+            'category_id' => 'required|exists:categories,id',
+            'deskripsi' => 'nullable|string',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
+            'shopee_link' => 'nullable|url',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $this->forbidMember();
+
+        $product->update($request->only('nama','sku','category_id','deskripsi','harga','stok','shopee_link'));
+
+        // Replace gambar lama jika ada file baru
+        if($request->has('replace_images')) {
+            foreach($request->replace_images as $imageId => $file) {
+                $img = ProductImage::find($imageId);
+                if($img && $file) {
+                    \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+                    $path = $file->store('products','public');
+                    $img->update([
+                        'gambar' => '/storage/'.$path
+                    ]);
+                }
+            }
+        }
+
+        // Hapus gambar yang dicentang
+        if($request->has('delete_images')) {
+            foreach($request->delete_images as $imageId) {
+                $img = ProductImage::find($imageId);
+                if($img) {
+                    \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+                    $img->delete();
+                }
+            }
+        }
+
+        // Tambah gambar baru
+        if($request->hasFile('images')) {
+            foreach($request->file('images') as $image) {
+                $path = $image->store('products','public');
+                $product->images()->create([
+                    'gambar' => '/storage/'.$path
+                ]);
+            }
+        }
+
+        return redirect()->route('products.index')->with('success','Produk berhasil diupdate!');
+    }
+
+    // Hapus produk beserta semua gambar
     public function destroy(Product $product)
     {
-        // Delete images
-        foreach ($product->images as $image) {
-            Storage::disk('public')->delete($image);
+        $this->forbidMember();
+        foreach($product->images as $img) {
+            \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+            $img->delete();
         }
 
         $product->delete();
+        return redirect()->route('products.index')->with('success','Produk berhasil dihapus!');
 
-        return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus!');
     }
 }

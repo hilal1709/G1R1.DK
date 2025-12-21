@@ -3,126 +3,150 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Article;
 use Illuminate\Http\Request;
+use App\Models\Article;
+use App\Models\ArticleMedia;
 use Inertia\Inertia;
+
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected $user;
+
     public function index()
     {
-        $articles = Article::latest('created_at')->paginate(10);
-
+        
+        $articles = Article::with('articleMedias', 'comments.user')
+        ->latest('created_at') // urutkan berdasarkan tanggal terbaru
+        ->paginate(10); // paginate data artikel
         return Inertia::render('Articles/Index', [
             'articles' => $articles,
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return Inertia::render('Articles/Create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'image' => 'nullable|image|max:2048',
-            'author' => 'nullable|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'excerpt' => 'nullable|string',
-            'is_published' => 'boolean',
+        $request->validate([
+            'judul' => 'required|string|max:200',
+            'isi' => 'nullable|string',
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov', // validasi file
+            'jenis.*' => 'required|string',
         ]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('articles', 'public');
-        }
+        $article = Article::create([
+            'judul' => $request->judul,
+            'isi' => $request->isi,
+            'user_id' => auth()->id(),          // otomatis ID user login
+        ]);
 
-        // Set published_at otomatis jika artikel dipublikasikan
-        if ($request->is_published) {
-            $validated['published_at'] = now();
+        if($request->hasFile('files')) {
+            foreach($request->file('files') as $index => $file) {
+                $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
+                $article->articleMedias()->create([
+                    'file_path' => '/storage/'.$path, // path untuk diakses browser
+                    'jenis' => $request->jenis[$index],
+                ]);
+            }
         }
-
-        Article::create($validated);
 
         return redirect()->route('articles.index')
             ->with('success', 'Artikel berhasil ditambahkan!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Article $article)
     {
+        
+        $article = Article::findOrFail($id);
+        $article->load('articleMedias', 'comments.user'); // tetap load relasi
         return Inertia::render('Articles/Show', [
             'article' => $article,
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Article $article)
-    {
-        return Inertia::render('Articles/Edit', [
-            'article' => $article,
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Article $article)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'image' => 'nullable|image|max:2048',
-            'author' => 'nullable|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'excerpt' => 'nullable|string',
-            'is_published' => 'boolean',
-            'published_at' => 'nullable|date',
+        $request->validate([
+            'judul' => 'required|string|max:200',
+            'isi' => 'nullable|string',
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
+            'jenis.*' => 'required|string',
         ]);
+        
+        // Update artikel
+        $article->update($request->only('judul','isi'));
 
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($article->image) {
-                Storage::disk('public')->delete($article->image);
+        // Ganti media lama jika ada file baru
+        if ($request->has('replace_files')) {
+            foreach ($request->replace_files as $mediaId => $file) {
+                $media = ArticleMedia::find($mediaId);
+                if ($media && $file) {
+                    // Hapus file lama
+                    \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+
+                    // Simpan file baru
+                    $path = $file->store('uploads/articlemedia', 'public');
+                    $media->update([
+                        'file_path' => '/storage/' . $path,
+                    ]);
+                }
             }
-            $validated['image'] = $request->file('image')->store('articles', 'public');
         }
 
-        $article->update($validated);
+        // --- Hapus media lama yang dicentang ---
+        if($request->has('delete_media')) {
+            foreach($request->delete_media as $mediaId) {
+                $media = ArticleMedia::find($mediaId);
+                if($media) {
+                    // Hapus file lama di storage
+                    \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+                    // Hapus record
+                    $media->delete();
+                }
+            }
+        }
+
+        // Tambah media baru jika ada
+        if($request->hasFile('files')) {
+            foreach($request->file('files') as $index => $file) {
+                $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
+                $article->articleMedias()->create([
+                    'file_path' => '/storage/'.$path, // path untuk diakses browser
+                    'jenis' => $request->jenis[$index],
+                ]);
+            }
+        }
 
         return redirect()->route('articles.index')
             ->with('success', 'Artikel berhasil diupdate!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Article $article)
     {
-        // Delete image if exists
-        if ($article->image) {
-            Storage::disk('public')->delete($article->image);
+        // Hapus semua media terkait artikel
+        foreach ($article->articleMedias as $media) {
+            // Hapus file fisik di storage
+            \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+            // Hapus record media
+            $media->delete();
         }
 
+        // Hapus artikel
         $article->delete();
 
         return redirect()->route('articles.index')
-            ->with('success', 'Artikel berhasil dihapus!');
+                        ->with('success', 'Artikel berhasil dihapus!');
+    }
+
+    public function create()
+    {
+        return Inertia::render('Articles/Create');
+    }
+
+    public function edit(Article $article)
+    {
+        return Inertia::render('Articles/Edit', [
+            'article' => $article,
+        ]);
     }
 }
