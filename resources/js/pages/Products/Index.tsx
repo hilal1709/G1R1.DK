@@ -46,7 +46,7 @@ interface Props {
 
 export default function ProductsIndex({ products, filters, categories, auth }: Props) {
   console.log('Received props:', { products, filters, categories, auth });
-  
+
   // Laravel pagination structure: { data: [], links: [], current_page, last_page, etc. }
   const safeProducts = {
     data: Array.isArray(products?.data) ? products.data : [],
