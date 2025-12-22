@@ -1,53 +1,45 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
+import { X } from 'lucide-react';
+import RatingStars from './RatingStars';
 
 interface Props {
   productId: number;
+  productName: string;
   onClose: () => void;
 }
 
-export default function ReviewForm({ productId, onClose }: Props) {
-  const [rating, setRating] = useState(5);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [images, setImages] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function ReviewForm({ productId, productName, onClose }: Props) {
+  const { data, setData, post, processing, errors, reset } = useForm({
+    product_id: productId,
+    rating: 0,
+    komentar: '',
+  });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files).slice(0, 3);
-      setImages(files);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    const formData = new FormData();
-    formData.append('product_id', productId.toString());
-    formData.append('rating', rating.toString());
-    formData.append('comment', comment);
-    images.forEach((image, index) => {
-      formData.append(`images[${index}]`, image);
-    });
+    if (data.rating === 0) {
+      alert('Mohon berikan rating bintang terlebih dahulu');
+      return;
+    }
 
-    router.post('/reviews', formData, {
+    post(route('reviews.store'), {
       onSuccess: () => {
-        alert('Review berhasil dikirim! Menunggu persetujuan admin.');
-        onClose();
+        setShowSuccess(true);
+        reset();
+        setTimeout(() => {
+          setShowSuccess(false);
+          onClose();
+          window.location.reload(); // Refresh untuk melihat review baru
+        }, 2000);
       },
       onError: (errors) => {
-        alert('Gagal mengirim review: ' + Object.values(errors).join(', '));
-        setIsSubmitting(false);
+        console.error('Error submitting review:', errors);
       },
-      onFinish: () => {
-        setIsSubmitting(false);
       },
     });
   };
@@ -79,45 +71,29 @@ export default function ReviewForm({ productId, onClose }: Props) {
           </button>
         </div>
 
+        {showSuccess && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-green-800 font-medium">Review berhasil dikirim!</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Rating */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Rating <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  className="transition-transform hover:scale-110"
-                >
-                  <svg
-                    className={`w-10 h-10 ${
-                      star <= (hoveredRating || rating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                    />
-                  </svg>
-                </button>
-              ))}
-              <span className="ml-3 text-lg font-semibold text-gray-700">
-                {rating} dari 5
-              </span>
-            </div>
+            <RatingStars
+              rating={data.rating}
+              onRatingChange={(rating) => setData('rating', rating)}
+              size="lg"
+              showNumber={true}
+            />
           </div>
 
           {/* Comment */}
@@ -128,16 +104,19 @@ export default function ReviewForm({ productId, onClose }: Props) {
             <textarea
               id="comment"
               required
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={data.komentar}
+              onChange={(e) => setData('komentar', e.target.value)}
               rows={6}
               maxLength={1000}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
               placeholder="Ceritakan pengalaman Anda dengan produk ini..."
             />
             <div className="text-right text-sm text-gray-500 mt-1">
-              {comment.length} / 1000
+              {data.komentar.length} / 1000
             </div>
+            {errors.komentar && (
+              <p className="text-red-500 text-sm mt-1">{errors.komentar}</p>
+            )}
           </div>
 
           {/* Images */}
@@ -147,9 +126,9 @@ export default function ReviewForm({ productId, onClose }: Props) {
             </label>
             <div className="space-y-4">
               {/* Preview */}
-              {images.length > 0 && (
+              {data.images && data.images.length > 0 && (
                 <div className="grid grid-cols-3 gap-4">
-                  {images.map((image, index) => (
+                  {Array.from(data.images).map((image: File, index: number) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
                       <img
                         src={URL.createObjectURL(image)}
@@ -158,12 +137,14 @@ export default function ReviewForm({ productId, onClose }: Props) {
                       />
                       <button
                         type="button"
-                        onClick={() => removeImage(index)}
+                        onClick={() => {
+                          const newImages = Array.from(data.images || []);
+                          newImages.splice(index, 1);
+                          setData('images', newImages.length > 0 ? newImages : null);
+                        }}
                         className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
@@ -171,7 +152,7 @@ export default function ReviewForm({ productId, onClose }: Props) {
               )}
 
               {/* Upload Button */}
-              {images.length < 3 && (
+              {(!data.images || data.images.length < 3) && (
                 <label className="block cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-500 transition-colors">
                     <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +165,14 @@ export default function ReviewForm({ productId, onClose }: Props) {
                     type="file"
                     accept="image/jpeg,image/png,image/jpg"
                     multiple
-                    onChange={handleImageChange}
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files) {
+                        const currentImages = Array.from(data.images || []);
+                        const newFiles = Array.from(files).slice(0, 3 - currentImages.length);
+                        setData('images', [...currentImages, ...newFiles]);
+                      }
+                    }}
                     className="hidden"
                   />
                 </label>
@@ -215,10 +203,10 @@ export default function ReviewForm({ productId, onClose }: Props) {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !comment.trim()}
+              disabled={processing || !data.komentar.trim() || data.rating === 0}
               className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-xl font-bold hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Mengirim...' : 'Kirim Review'}
+              {processing ? 'Mengirim...' : 'Kirim Review'}
             </button>
           </div>
         </form>

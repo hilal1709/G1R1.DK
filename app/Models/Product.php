@@ -33,10 +33,15 @@ class Product extends Model
     {
         return $this->hasMany(ProductMarketplace::class);
     }
-    
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'target');
     }
 
     public function averageRating()

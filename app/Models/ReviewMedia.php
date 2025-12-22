@@ -13,6 +13,7 @@ class ReviewMedia extends Model
         'review_id', // relasi ke review
         'media_url',
         'media_type', // image, video, dll
+        'gambar',     // path gambar
     ];
 
     /**

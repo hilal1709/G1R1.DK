@@ -10,13 +10,14 @@ use App\Models\Category;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
 
     private function forbidMember()
     {
-        if (auth()->user()->role === 'member') {
+        if (Auth::user()->role === 'member') {
             abort(403, 'Member tidak punya akses.');
         }
     }
@@ -77,11 +78,26 @@ class ProductController extends Controller
     // Tampilkan detail produk
     public function show(Product $product)
     {
-        // Load relasi category dan images
-        $product->load('category', 'images');
+        // Load relasi category, images, reviews, dan comments
+        $product->load([
+            'category',
+            'images',
+            'reviews' => function ($query) {
+                $query->with(['user', 'images'])->latest();
+            },
+            'comments' => function ($query) {
+                $query->with('user')->latest();
+            }
+        ]);
+
+        // Hitung average rating dan review count
+        $product->average_rating = $product->reviews->avg('rating') ?? 0;
+        $product->review_count = $product->reviews->count();
 
         return Inertia::render('Products/Show', [
             'product' => $product,
+            'reviews' => $product->reviews,
+            'comments' => $product->comments,
         ]);
     }
 
@@ -106,7 +122,15 @@ class ProductController extends Controller
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'shopee_link' => 'nullable|url',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'images' => 'required|array|min:3',
+            'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+        ], [
+            'images.required' => 'Gambar produk wajib diupload.',
+            'images.min' => 'Minimal 3 gambar produk harus diupload.',
+            'images.*.required' => 'Setiap file gambar harus valid.',
+            'images.*.image' => 'File harus berupa gambar.',
+            'images.*.mimes' => 'Format gambar harus JPEG, PNG, atau JPG.',
+            'images.*.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         $this->forbidMember();
@@ -122,7 +146,7 @@ class ProductController extends Controller
         ]);
 
 
-        // Upload gambar banyak
+        // Upload gambar banyak (minimal 3)
         if($request->hasFile('images')) {
             foreach($request->file('images') as $image) {
                 $path = $image->store('products','public');
@@ -139,6 +163,7 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $this->forbidMember();
+        $product->load('images');
         $categories = Category::all();
         return Inertia::render('Products/Edit', [
             'product' => $product,
@@ -169,7 +194,7 @@ class ProductController extends Controller
             foreach($request->replace_images as $imageId => $file) {
                 $img = ProductImage::find($imageId);
                 if($img && $file) {
-                    \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+                    Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
                     $path = $file->store('products','public');
                     $img->update([
                         'gambar' => '/storage/'.$path
@@ -183,7 +208,7 @@ class ProductController extends Controller
             foreach($request->delete_images as $imageId) {
                 $img = ProductImage::find($imageId);
                 if($img) {
-                    \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+                    Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
                     $img->delete();
                 }
             }
@@ -207,12 +232,25 @@ class ProductController extends Controller
     {
         $this->forbidMember();
         foreach($product->images as $img) {
-            \Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
+            Storage::disk('public')->delete(str_replace('/storage/','',$img->gambar));
             $img->delete();
         }
 
         $product->delete();
         return redirect()->route('products.index')->with('success','Produk berhasil dihapus!');
 
+    }
+
+    // API endpoint untuk mendapatkan stok terbaru
+    public function getStock(Product $product)
+    {
+        // Refresh dari database untuk mendapatkan data terbaru
+        $product->refresh();
+
+        return response()->json([
+            'stok' => $product->stok,
+            'updated_at' => $product->updated_at->toISOString(),
+            'is_available' => $product->stok > 0,
+        ]);
     }
 }

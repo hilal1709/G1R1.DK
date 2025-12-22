@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
-import { ShoppingCart, Search, Filter, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Search, Filter, ChevronDown, MessageCircle, ShoppingBag } from 'lucide-react';
+import { formatQuickOrderMessage, openWhatsApp, openShopee, formatRupiah } from '@/lib/constants';
 
 interface ProductImage {
   id: number;
@@ -21,6 +22,7 @@ interface Product {
   deskripsi: string;
   harga: number;
   stok: number;
+  shopee_link?: string | null;
   category?: Category;
   images?: ProductImage[];
 }
@@ -232,11 +234,22 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
 
             {/* Products Grid */}
             <div className="lg:col-span-3">
-              {/* Results Info */}
+              {/* Results Info and Add Button */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-gray-600">
                   Menampilkan {safeProducts.data.length} dari {safeProducts.total} produk
                 </p>
+                {auth?.user?.role === 'admin' && (
+                  <Link
+                    href="/products/create"
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Produk
+                  </Link>
+                )}
               </div>
 
               {/* Products */}
@@ -250,8 +263,20 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Link href={`/products/${product.id}`}>
-                          <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group">
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group relative">
+                          {/* Admin Edit Button */}
+                          {auth?.user?.role === 'admin' && (
+                            <Link
+                              href={`/products/${product.id}/edit`}
+                              className="absolute top-4 left-4 z-10 bg-white/90 hover:bg-amber-500 text-gray-700 hover:text-white p-2 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Link>
+                          )}
+
+                          <Link href={`/products/${product.id}`}>
                             {/* Image */}
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
                               <img
@@ -288,22 +313,50 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                               </p>
 
                               {/* Price */}
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-xl font-bold text-amber-600">
-                                    {formatPrice(product.harga)}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    Stok: {product.stok}
-                                  </div>
+                              <div className="mb-3">
+                                <div className="text-xl font-bold text-amber-600">
+                                  {formatPrice(product.harga)}
                                 </div>
-                                <button className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                  <ShoppingCart className="w-5 h-5 text-white" />
+                                <div className="text-sm text-gray-500">
+                                  Stok: {product.stok}
+                                </div>
+                              </div>
+
+                              {/* Quick Order Buttons */}
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (product.stok > 0) {
+                                      openWhatsApp(formatQuickOrderMessage(product));
+                                    }
+                                  }}
+                                  disabled={product.stok === 0}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
+                                  title="Pesan via WhatsApp"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span className="hidden sm:inline">WA</span>
                                 </button>
+                                {product.shopee_link && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      openShopee(product.shopee_link!);
+                                    }}
+                                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
+                                    title="Beli di Shopee"
+                                  >
+                                    <ShoppingBag className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Shopee</span>
+                                  </button>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        </Link>
+                          </Link>
+                        </div>
                       </motion.div>
                     ))}
                   </div>

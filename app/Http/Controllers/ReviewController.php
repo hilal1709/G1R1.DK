@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Review;
+use App\Models\ReviewMedia;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -12,48 +13,48 @@ class ReviewController extends Controller
 {
     protected $user;
 
-    
+
 
     // Create review
     public function store(Request $request)
     {
         $request->validate([
             'rating'      => 'required|integer|min:1|max:5',
-            'komentar'      => 'required|string|max:1000',
+            'komentar'    => 'required|string|max:1000',
             'product_id'  => 'required|exists:products,id',
-            'media' => 'required|file|mimes:jpg,jpeg,png,mp4,mov',
+            'images.*'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         // Cek apakah user sudah pernah review product ini
         $existing = Review::where('product_id', $request->product_id)
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->first();
 
         if ($existing) {
-            return back()->withErrors('Anda sudah membuat ulasan untuk produk ini.');
+            return back()->withErrors(['error' => 'Anda sudah membuat ulasan untuk produk ini.']);
         }
 
-        $review = new Review();
-        $review->user_id   = auth()->id();
-        $review->product_id = $request->product_id;
-        $review->rating    = $request->rating;
-        $review->komentar    = $request->komentar;
-        $review->save();
+        $review = Review::create([
+            'user_id'    => Auth::id(),
+            'product_id' => $request->product_id,
+            'rating'     => $request->rating,
+            'komentar'   => $request->komentar,
+        ]);
 
-        // Jika ada media (gambar/video) yang di-upload
-        if ($request->hasFile('media')) {
-            // Upload media
-            $path = $request->file('media')->store('uploads/review_media', 'public');
+        // Jika ada gambar yang di-upload
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('uploads/review_media', 'public');
 
-            // Simpan informasi media terkait review
-            ReviewMedia::create([
-                'review_id'  => $review->id, // Menghubungkan media ke review
-                'file_path'  => '/storage/' . $path,
-                'media_type' => $request->file('media')->getClientMimeType(),
-            ]);
+                // Gunakan ReviewMedia jika model tersedia
+                ReviewMedia::create([
+                    'review_id'  => $review->id,
+                    'gambar'     => $path,
+                ]);
+            }
         }
 
-        return back()->with('success', 'Review berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'Review berhasil ditambahkan!');
     }
 
     // Update review (pakai JSON seperti punya kamu)
@@ -65,7 +66,7 @@ class ReviewController extends Controller
             'media'      => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
         ]);
 
-        if (auth()->id() !== $review->user_id) {
+        if (Auth::id() !== $review->user_id) {
             return abort(403, 'Kamu tidak punya izin untuk edit review ini.');
         }
 
@@ -125,7 +126,7 @@ class ReviewController extends Controller
     // Hapus review
     public function destroy(Review $review)
     {
-        if (auth()->id() !== $review->user_id) {
+        if (Auth::id() !== $review->user_id) {
             return abort(403, 'Kamu tidak punya izin untuk menghapus review ini.');
         }
 

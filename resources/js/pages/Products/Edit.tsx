@@ -4,58 +4,87 @@ import {
     Save,
     ArrowLeft,
     Image as ImageIcon,
-    DollarSign,
+    X,
+    Trash2,
 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
+interface ProductImage {
+    id: number;
+    gambar: string;
+}
+
+interface Category {
+    id: number;
+    nama: string;
+}
+
 interface Product {
     id: number;
-    name: string;
-    description: string;
-    price: number;
-    image: string | null;
-    category: string | null;
-    stock: number | null;
-    is_active: boolean;
-    excerpt: string | null;
+    nama: string;
+    sku: string;
+    deskripsi: string | null;
+    harga: number;
+    stok: number;
+    shopee_link: string | null;
+    category_id: number;
+    images: ProductImage[];
 }
 
 interface PageProps {
     product: Product;
+    categories: Category[];
 }
 
-export default function ProductEdit({ product }: PageProps) {
+export default function ProductEdit({ product, categories }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
-        name: product.name,
-        description: product.description,
-        price: product.price.toString(),
-        image: null as File | null,
-        category: product.category || '',
-        stock: product.stock?.toString() || '',
-        is_active: product.is_active,
-        short_description: product.excerpt || '',
+        nama: product.nama,
+        sku: product.sku,
+        category_id: product.category_id.toString(),
+        deskripsi: product.deskripsi || '',
+        harga: product.harga.toString(),
+        stok: product.stok.toString(),
+        shopee_link: product.shopee_link || '',
+        images: [] as File[],
+        delete_images: [] as number[],
         _method: 'PUT',
     });
 
-    const [imagePreview, setImagePreview] = useState<string | null>(
-        product.image ? `/storage/${product.image}` : null,
-    );
+    const [existingImages, setExistingImages] = useState<ProductImage[]>(product.images || []);
+    const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+    const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            const newImages = [...data.images, ...files];
+            setData('images', newImages);
+
+            // Create previews
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setNewImagePreviews(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
         }
+    };
+
+    const removeNewImage = (index: number) => {
+        const newImages = data.images.filter((_, i) => i !== index);
+        const newPreviews = newImagePreviews.filter((_, i) => i !== index);
+        setData('images', newImages);
+        setNewImagePreviews(newPreviews);
+    };
+
+    const markImageForDeletion = (imageId: number) => {
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+        setData('delete_images', [...data.delete_images, imageId]);
     };
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(`/products/${product.id}`);
+        post(route('products.update', product.id));
     };
 
     return (
@@ -86,7 +115,6 @@ export default function ProductEdit({ product }: PageProps) {
                     </div>
                 </nav>
 
-                {/* Header */}
                 <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <motion.h1
@@ -102,7 +130,7 @@ export default function ProductEdit({ product }: PageProps) {
                             transition={{ delay: 0.1 }}
                             className="text-xl text-white/90"
                         >
-                            Update informasi produk Damar Kurung
+                            Update informasi produk {product.nama}
                         </motion.p>
                     </div>
                 </div>
@@ -116,194 +144,243 @@ export default function ProductEdit({ product }: PageProps) {
                         className="bg-white rounded-2xl shadow-xl p-8"
                     >
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Image Upload */}
+                            {/* Existing Images */}
+                            {existingImages.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-4">
+                                        Gambar Yang Ada
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-4 mb-4">
+                                        {existingImages.map((image) => (
+                                            <div key={image.id} className="relative group">
+                                                <img
+                                                    src={image.gambar}
+                                                    alt="Existing"
+                                                    className="w-full h-32 object-cover rounded-lg shadow-lg"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => markImageForDeletion(image.id)}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Add New Images */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-4">
-                                    Gambar Produk
+                                    Tambah Gambar Baru
                                 </label>
                                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-400 transition-colors">
-                                    {imagePreview ? (
+                                    {newImagePreviews.length > 0 ? (
                                         <div className="space-y-4">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="max-w-xs mx-auto rounded-lg shadow-lg"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setImagePreview(null);
-                                                    setData('image', null);
-                                                }}
-                                                className="text-red-500 hover:text-red-700 text-sm"
-                                            >
-                                                Hapus Gambar
-                                            </button>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                {newImagePreviews.map((preview, index) => (
+                                                    <div key={index} className="relative">
+                                                        <img
+                                                            src={preview}
+                                                            alt={`Preview ${index + 1}`}
+                                                            className="w-full h-32 object-cover rounded-lg shadow-lg"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeNewImage(index)}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <label htmlFor="images" className="cursor-pointer inline-block">
+                                                <span className="text-amber-600 hover:text-amber-700 font-semibold">
+                                                    + Tambah Gambar Lagi
+                                                </span>
+                                                <input
+                                                    id="images"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    multiple
+                                                    onChange={handleNewImageChange}
+                                                    className="hidden"
+                                                />
+                                            </label>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
                                             <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
                                             <div>
-                                                <label htmlFor="image" className="cursor-pointer">
+                                                <label htmlFor="images" className="cursor-pointer">
                                                     <span className="text-amber-600 hover:text-amber-700 font-semibold">
                                                         Upload gambar baru
                                                     </span>
                                                     <span className="text-gray-500"> atau drag and drop</span>
                                                     <input
-                                                        id="image"
+                                                        id="images"
                                                         type="file"
                                                         accept="image/*"
-                                                        onChange={handleImageChange}
+                                                        multiple
+                                                        onChange={handleNewImageChange}
                                                         className="hidden"
                                                     />
                                                 </label>
                                                 <p className="text-sm text-gray-500 mt-1">
-                                                    PNG, JPG, GIF hingga 10MB
+                                                    PNG, JPG hingga 2MB per file
                                                 </p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
-                                {errors.image && (
-                                    <p className="text-red-500 text-sm mt-2">{errors.image}</p>
+                                {errors.images && (
+                                    <p className="text-red-500 text-sm mt-2">{errors.images}</p>
                                 )}
                             </div>
 
                             {/* Basic Info */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label htmlFor="nama" className="block text-sm font-semibold text-gray-700 mb-2">
                                         Nama Produk <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
-                                        id="name"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        id="nama"
+                                        value={data.nama}
+                                        onChange={(e) => setData('nama', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="Masukkan nama produk"
                                         required
                                     />
-                                    {errors.name && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                    {errors.nama && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.nama}</p>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Kategori
+                                    <label htmlFor="sku" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        SKU <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
-                                        id="category"
-                                        value={data.category}
-                                        onChange={(e) => setData('category', e.target.value)}
+                                        id="sku"
+                                        value={data.sku}
+                                        onChange={(e) => setData('sku', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                        placeholder="Contoh: Lampu, Hiasan, dll"
+                                        placeholder="Contoh: DK-001"
+                                        required
                                     />
-                                    {errors.category && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+                                    {errors.sku && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.sku}</p>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* Category */}
+                            <div>
+                                <label htmlFor="category_id" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Kategori <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="category_id"
+                                    value={data.category_id}
+                                    onChange={(e) => setData('category_id', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    required
+                                >
+                                    <option value="">Pilih Kategori</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>{cat.nama}</option>
+                                    ))}
+                                </select>
+                                {errors.category_id && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>
+                                )}
                             </div>
 
                             {/* Price and Stock */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label htmlFor="harga" className="block text-sm font-semibold text-gray-700 mb-2">
                                         Harga <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                                        <span className="absolute left-3 top-3 text-gray-500">Rp</span>
                                         <input
                                             type="number"
-                                            id="price"
-                                            value={data.price}
-                                            onChange={(e) => setData('price', e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                            id="harga"
+                                            value={data.harga}
+                                            onChange={(e) => setData('harga', e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                             placeholder="0"
                                             min="0"
                                             step="1000"
                                             required
                                         />
                                     </div>
-                                    {errors.price && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                                    {errors.harga && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.harga}</p>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Stok
+                                    <label htmlFor="stok" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Stok <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="number"
-                                        id="stock"
-                                        value={data.stock}
-                                        onChange={(e) => setData('stock', e.target.value)}
+                                        id="stok"
+                                        value={data.stok}
+                                        onChange={(e) => setData('stok', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="0"
                                         min="0"
+                                        required
                                     />
-                                    {errors.stock && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+                                    {errors.stok && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.stok}</p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Excerpt */}
+                            {/* Shopee Link */}
                             <div>
-                                <label htmlFor="short_description" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Ringkasan Produk
+                                <label htmlFor="shopee_link" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Link Shopee (Opsional)
                                 </label>
-                                <textarea
-                                    id="short_description"
-                                    value={data.short_description}
-                                    onChange={(e) => setData('short_description', e.target.value)}
-                                    rows={3}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
-                                    placeholder="Deskripsi singkat produk (max 200 karakter)"
-                                    maxLength={200}
+                                <input
+                                    type="url"
+                                    id="shopee_link"
+                                    value={data.shopee_link}
+                                    onChange={(e) => setData('shopee_link', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    placeholder="https://shopee.co.id/..."
                                 />
-                                <p className="text-sm text-gray-500 mt-1">
-                                    {data.short_description.length}/200 karakter
-                                </p>
-                                {errors.short_description && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.short_description}</p>
+                                {errors.shopee_link && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.shopee_link}</p>
                                 )}
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Deskripsi Lengkap <span className="text-red-500">*</span>
+                                <label htmlFor="deskripsi" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Deskripsi Produk
                                 </label>
                                 <textarea
-                                    id="description"
-                                    value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
+                                    id="deskripsi"
+                                    value={data.deskripsi}
+                                    onChange={(e) => setData('deskripsi', e.target.value)}
                                     rows={8}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                                     placeholder="Deskripsikan produk secara detail..."
-                                    required
                                 />
-                                {errors.description && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                                {errors.deskripsi && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.deskripsi}</p>
                                 )}
-                            </div>
-
-                            {/* Status */}
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
-                                    Produk aktif dan dapat dipesan
-                                </label>
                             </div>
 
                             {/* Actions */}

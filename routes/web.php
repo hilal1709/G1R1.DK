@@ -87,6 +87,9 @@ Route::resource('videos', VideoController::class)->only(['index','show']);
 Route::resource('products', ProductController::class)->only(['index','show']);
 Route::resource('categories', CategoryController::class)->only(['index','show']);
 
+// API endpoint untuk real-time stock update
+Route::get('/api/products/{product}/stock', [ProductController::class, 'getStock'])->name('products.stock');
+
 // Google Auth Routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
