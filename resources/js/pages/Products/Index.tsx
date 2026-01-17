@@ -174,7 +174,7 @@ const openShopee = (url: string) => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Nama produk..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   />
                 </div>
 
@@ -186,7 +186,7 @@ const openShopee = (url: string) => {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="">Semua Kategori</option>
                     {categories.map((cat) => (
@@ -208,14 +208,14 @@ const openShopee = (url: string) => {
                       value={minHarga}
                       onChange={(e) => setMinHarga(e.target.value)}
                       placeholder="Min"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
                     <input
                       type="number"
                       value={maxHarga}
                       onChange={(e) => setMaxHarga(e.target.value)}
                       placeholder="Max"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -228,7 +228,7 @@ const openShopee = (url: string) => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="latest">Terbaru</option>
                     <option value="price_low">Harga: Rendah ke Tinggi</option>
