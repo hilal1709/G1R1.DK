@@ -16,29 +16,35 @@ import PublicNavbar from '@/components/PublicNavbar';
 
 export default function ArticleCreate() {
     const { data, setData, post, processing, errors } = useForm({
-        title: '',
-        content: '',
-        image: null as File | null,
-        author: '',
-        category: '',
-        excerpt: '',
-        is_published: false,
+        judul: '',
+        isi: '',
+        files: [] as File[],
+
     });
 
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string[]>([]);
     const [wordCount, setWordCount] = useState(0);
     const maxWords = 100;
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
+        const selectedFiles = e.target.files;
+        if (!selectedFiles) return;
+
+        const newFiles = Array.from(selectedFiles);
+
+        setData('files', [...data.files, ...newFiles]);
+
+        const previews = newFiles.map(file =>
+            URL.createObjectURL(file)
+        );
+        setImagePreview(prev => [...prev, ...previews]);
+
+        e.target.value = '';
+    };
+
+    const removeImage = (index: number) => {
+        setImagePreview(prev => prev.filter((_, i) => i !== index));
+        setData('files', data.files.filter((_, i) => i !== index));
     };
 
     const handleExcerptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -47,14 +53,16 @@ export default function ArticleCreate() {
         const count = words.length;
 
         if (count <= maxWords) {
-            setData('excerpt', text);
+            setData('isi', text);
             setWordCount(count);
         }
     };
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-        post('/articles');
+        post('/articles', {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -113,18 +121,18 @@ export default function ArticleCreate() {
                                     </label>
                                     <input
                                         type="text"
-                                        value={data.title}
+                                        value={data.judul}
                                         onChange={(e) =>
-                                            setData('title', e.target.value)
+                                            setData('judul', e.target.value)
                                         }
                                         placeholder="Masukkan judul artikel..."
                                         className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-gray-900"
                                         required
                                     />
-                                    {errors.title && (
+                                    {errors.judul && (
                                         <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                                             <AlertCircle className="h-4 w-4" />
-                                            {errors.title}
+                                            {errors.judul}
                                         </p>
                                     )}
                                 </motion.div>
@@ -141,57 +149,24 @@ export default function ArticleCreate() {
                                         Konten Artikel *
                                     </label>
                                     <textarea
-                                        value={data.content}
+                                        value={data.isi}
                                         onChange={(e) =>
-                                            setData('content', e.target.value)
+                                            setData('isi', e.target.value)
                                         }
                                         placeholder="Tulis konten artikel Anda di sini..."
                                         rows={15}
                                         className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all resize-none text-gray-900"
                                         required
                                     />
-                                    {errors.content && (
+                                    {errors.isi && (
                                         <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                                             <AlertCircle className="h-4 w-4" />
-                                            {errors.content}
+                                            {errors.isi}
                                         </p>
                                     )}
                                 </motion.div>
 
-                                {/* Excerpt - Word Counter */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                    className="bg-white rounded-xl border border-amber-100 shadow-lg p-6"
-                                >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <Eye className="h-5 w-5 text-amber-600" />
-                                            Deskripsi Singkat *
-                                        </label>
-                                        <span className={`text-sm font-semibold ${wordCount >= maxWords ? 'text-red-600' : wordCount >= maxWords * 0.8 ? 'text-orange-600' : 'text-gray-600'}`}>
-                                            {wordCount}/{maxWords} kata
-                                        </span>
-                                    </div>
-                                    <textarea
-                                        value={data.excerpt}
-                                        onChange={handleExcerptChange}
-                                        placeholder="Tulis deskripsi singkat maksimal 100 kata..."
-                                        rows={4}
-                                        className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all resize-none text-gray-900"
-                                        required
-                                    />
-                                    <p className="mt-2 text-xs text-gray-500">
-                                        Deskripsi singkat akan ditampilkan di halaman preview artikel
-                                    </p>
-                                    {errors.excerpt && (
-                                        <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="h-4 w-4" />
-                                            {errors.excerpt}
-                                        </p>
-                                    )}
-                                </motion.div>
+                                
                             </div>
 
                             {/* Sidebar */}
@@ -201,140 +176,75 @@ export default function ArticleCreate() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     className="bg-white rounded-xl border border-amber-100 shadow-lg p-6"
-                                >
+                                    >
                                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
                                         <ImageIcon className="h-5 w-5 text-amber-600" />
                                         Gambar Artikel *
                                     </label>
 
-                                    {imagePreview ? (
-                                        <div className="relative mb-4">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="w-full h-48 object-cover rounded-lg border-2 border-amber-100"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setImagePreview(null);
-                                                    setData('image', null);
-                                                }}
-                                                className="absolute top-2 right-2 px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors shadow-lg"
+                                    <div className="border-2 border-dashed border-amber-300 rounded-lg p-6 bg-amber-50">
+                                        {imagePreview.length > 0 ? (
+                                        <>
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                            {imagePreview.map((src, index) => (
+                                                <div key={index} className="relative">
+                                                <img
+                                                    src={src}
+                                                    className="w-full h-32 object-cover rounded-lg border"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded"
+                                                >
+                                                    ✕
+                                                </button>
+                                                </div>
+                                            ))}
+                                            </div>
+
+                                            <label
+                                            htmlFor="image"
+                                            className="cursor-pointer text-amber-600 font-semibold"
                                             >
-                                                Hapus
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="border-2 border-dashed border-amber-300 rounded-lg p-8 text-center mb-4 bg-amber-50">
-                                            <ImageIcon className="h-12 w-12 text-amber-400 mx-auto mb-3" />
-                                            <p className="text-sm text-gray-600 mb-1 font-semibold">
-                                                Belum ada gambar
+                                            + Tambah gambar
+                                            </label>
+                                        </>
+                                        ) : (
+                                        <label htmlFor="image" className="block text-center cursor-pointer">
+                                            <ImageIcon className="h-12 w-12 text-amber-400 mx-auto mb-2" />
+                                            <p className="text-sm font-semibold text-gray-700">
+                                            Upload gambar
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Upload gambar untuk artikel Anda
+                                            JPG / PNG maksimal 2MB
                                             </p>
-                                        </div>
-                                    )}
+                                        </label>
+                                        )}
 
-                                    <input
+                                        <input
+                                        id="image"
                                         type="file"
+                                        multiple
                                         accept="image/*"
                                         onChange={handleImageChange}
-                                        className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100 cursor-pointer"
-                                        required
-                                    />
-                                    <p className="mt-2 text-xs text-gray-500">
-                                        Format: JPG, PNG, atau GIF. Maksimal 2MB
-                                    </p>
-                                    {errors.image && (
-                                        <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="h-4 w-4" />
-                                            {errors.image}
-                                        </p>
-                                    )}
-                                </motion.div>
-
-                                {/* Meta Information */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="bg-white rounded-xl border border-amber-100 shadow-lg p-6 space-y-4"
-                                >
-                                    {/* Author */}
-                                    <div>
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                                            <User className="h-4 w-4 text-amber-600" />
-                                            Penulis
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.author}
-                                            onChange={(e) =>
-                                                setData('author', e.target.value)
-                                            }
-                                            placeholder="Nama penulis"
-                                            className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-sm text-gray-900"
+                                        className="hidden"
                                         />
                                     </div>
 
-                                    {/* Category */}
-                                    <div>
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                                            <Tag className="h-4 w-4 text-amber-600" />
-                                            Kategori
-                                        </label>
-                                        <select
-                                            value={data.category}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'category',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="w-full px-4 py-2 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-sm text-gray-900"
-                                        >
-                                            <option value="">
-                                                Pilih kategori
-                                            </option>
-                                            <option value="Sejarah">
-                                                Sejarah
-                                            </option>
-                                            <option value="Tutorial">
-                                                Tutorial
-                                            </option>
-                                            <option value="Berita">Berita</option>
-                                            <option value="Event">Event</option>
-                                            <option value="Pengrajin">
-                                                Pengrajin
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                    {/* Status */}
-                                    <div>
-                                        <label className="flex items-center gap-3">
-                                            <input
-                                                type="checkbox"
-                                                checked={data.is_published}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'is_published',
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="w-5 h-5 text-amber-600 rounded focus:ring-2 focus:ring-amber-500"
-                                            />
-                                            <span className="text-sm text-gray-700">
-                                                Publikasikan artikel sekarang
-                                            </span>
-                                        </label>
-                                        <p className="mt-1 text-xs text-gray-500 ml-8">
-                                            Tanggal publikasi akan diatur otomatis saat ini
+                                    {errors.files && (
+                                        <p className="mt-2 text-sm text-red-600">
+                                        {errors.files}
                                         </p>
-                                    </div>
+                                    )}
                                 </motion.div>
+
+
+                            
+
+
+
+                                    
 
                                 {/* Submit Button */}
                                 <motion.div

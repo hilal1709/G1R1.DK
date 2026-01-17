@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
@@ -16,6 +17,7 @@ class EventController extends Controller
 
     public function index(Request $request)
     {
+
         $query = Event::query();
 
         // Filter by status (jika ada)
@@ -28,16 +30,19 @@ class EventController extends Controller
         // Search (jika ada pencarian)
         if ($request->has('search') && $request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', "%{$request->search}%")
-                    ->orWhere('description', 'like', "%{$request->search}%")
-                    ->orWhere('location', 'like', "%{$request->search}%");
+                $q->where('nama', 'like', "%{$request->search}%")
+                    ->orWhere('deskripsi', 'like', "%{$request->search}%")
+                    ->orWhere('lokasi', 'like', "%{$request->search}%");
             });
         }
 
         // Mengambil event dengan relasi, urutan berdasarkan tanggal_mulai, dan paginasi
-        $events = $query->with('eventmedias', 'comments.user', 'creator') // load relasi yang dibutuhkan
+        $events = $query
+            ->with(['eventMedias', 'comments.user', 'user'])
+            ->withCount('registrations') // ⬅️ INI WAJIB
             ->orderBy('tanggal_mulai', 'asc')
-            ->paginate(6); // 6 event per halaman untuk tampilan yang baik
+            ->paginate(6);
+
 
         return Inertia::render('Events/Index', [
             'events' => $events,
@@ -52,38 +57,38 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama' => 'required|string|max:200',
             'lokasi' => 'nullable|string|max:150',
-            'tanggal' => 'nullable|date',
+
             'deskripsi' => 'nullable|string',
             'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
             'tanggal_mulai' => 'required|date',
-            'waktu_mulai' => 'required|date_format:H:i',
+            //'waktu_mulai' => 'required|date_format:H:i',
             'tanggal_selesai' => 'nullable|date',
-            'waktu_selesai' => 'nullable|date_format:H:i',
+            //'waktu_selesai' => 'nullable|date_format:H:i',
             'max_pendaftar' => 'nullable|integer|min:1',
         ]);
 
         // Gabungkan date dan time menjadi datetime
-        $validated['tanggal_mulai'] = $validated['tanggal_mulai'] . ' ' . $validated['waktu_mulai'];
-        if (!empty($validated['tanggal_selesai']) && !empty($validated['waktu_selesai'])) {
-            $validated['tanggal_selesai'] = $validated['tanggal_selesai'] . ' ' . $validated['waktu_selesai'];
-        } else {
-            $validated['tanggal_selesai'] = $validated['tanggal_selesai']; // Default sama dengan start
-        }
+       // $validated['tanggal_mulai'] = $validated['tanggal_mulai'] . ' ' . $validated['waktu_mulai'];
+       // if (!empty($validated['tanggal_selesai']) && !empty($validated['waktu_selesai'])) {
+        //    $validated['tanggal_selesai'] = $validated['tanggal_selesai'] . ' ' . $validated['waktu_selesai'];
+       // } else {
+         //   $validated['tanggal_selesai'] = $validated['tanggal_selesai']; // Default sama dengan start
+       // }
 
         // Hapus field time karena sudah digabungkan
-        unset($validated['waktu_mulai'], $validated['waktu_selesai']);
+       // unset($validated['waktu_mulai'], $validated['waktu_selesai']);
         $validated['status'] = 'upcoming'; // Set status default
         $validated['user_id'] = auth()->id();
-        Event::create($validated);
+        $event = Event::create($validated);
 
         // Upload media
         if($request->hasFile('files')) {
             foreach($request->file('files') as $file) {
                 $path = $file->store('uploads/eventmedia', 'public');
-                $event->eventmedias()->create([
+                $event->eventMedias()->create([
                     'file_path' => '/storage/'.$path,
                 ]);
             }
@@ -94,10 +99,12 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        $event->load('eventmedias','comments.user');
+        $event->load( 'user', 'eventMedias','comments.user');
 
         // Ambil event terkait (3 event upcoming lainnya)
-        $relatedEvents = Event::where('id', '!=', $event->id)
+        $relatedEvents = Event::with('eventMedias')
+            ->withCount('registrations')
+            ->where('id', '!=', $event->id)
             ->where('status', 'upcoming')
             ->orderBy('tanggal_mulai', 'asc')
             ->take(3)
@@ -112,42 +119,44 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         // Pisahkan date dan time untuk form
-        $eventData = $event->toArray();
-        $eventData['tanggal_mulai'] = date('Y-m-d', strtotime($event->tanggal_mulai));
-        $eventData['waktu_mulai'] = date('H:i', strtotime($event->tanggal_mulai));
-        $eventData['tanggal_selesai'] = date('Y-m-d', strtotime($event->tanggal_selesai));
-        $eventData['waktu_selesai'] = date('H:i', strtotime($event->tanggal_selesai));
+        //$eventData = $event->toArray();
+        //$eventData['tanggal_mulai'] = date('Y-m-d', strtotime($event->tanggal_mulai));
+        //$eventData['waktu_mulai'] = date('H:i', strtotime($event->tanggal_mulai));
+        //$eventData['tanggal_selesai'] = date('Y-m-d', strtotime($event->tanggal_selesai));
+        //$eventData['waktu_selesai'] = date('H:i', strtotime($event->tanggal_selesai));
+
+        $event->load('eventMedias');
 
         return Inertia::render('Events/Edit', [
-            'event' => $eventData,
+            'event' => $event,
         ]);
     }
 
     public function update(Request $request, Event $event)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama' => 'required|string|max:200',
             'lokasi' => 'nullable|string|max:150',
-            'tanggal' => 'nullable|date',
+
             'deskripsi' => 'nullable|string',
             'tanggal_mulai' => 'required|date',
-            'waktu_mulai' => 'required|date_format:H:i',
+           // 'waktu_mulai' => 'required|date_format:H:i',
             'tanggal_selesai' => 'nullable|date',
-            'waktu_selesai' => 'nullable|date_format:H:i',
+            //'waktu_selesai' => 'nullable|date_format:H:i',
             'max_pendaftar' => 'nullable|integer|min:1',
             'status' => 'required|in:upcoming,ongoing,completed,cancelled',
         ]);
 
         // Gabungkan date dan time menjadi datetime
-        $validated['tanggal_mulai'] = $validated['tanggal_mulai'] . ' ' . $validated['waktu_mulai'];
-        if (!empty($validated['tanggal_selesai']) && !empty($validated['waktu_selesai'])) {
-            $validated['tanggal_selesai'] = $validated['tanggal_selesai'] . ' ' . $validated['waktu_selesai'];
-        } else {
-            $validated['tanggal_selesai'] = $validated['tanggal_mulai']; // Default sama dengan start
-        }
+        //$validated['tanggal_mulai'] = $validated['tanggal_mulai'] . ' ' . $validated['waktu_mulai'];
+        //if (!empty($validated['tanggal_selesai']) && !empty($validated['waktu_selesai'])) {
+            //$validated['tanggal_selesai'] = $validated['tanggal_selesai'] . ' ' . $validated['waktu_selesai'];
+        //} else {
+           // $validated['tanggal_selesai'] = $validated['tanggal_mulai']; // Default sama dengan start
+        //}
 
         // Hapus field time karena sudah digabungkan
-        unset($validated['waktu_mulai'], $validated['waktu_selesai']);
+        //unset($validated['waktu_mulai'], $validated['waktu_selesai']);
 
         $event->update($validated);
 
@@ -178,7 +187,7 @@ class EventController extends Controller
         if($request->hasFile('files')) {
             foreach($request->file('files') as $file) {
                 $path = $file->store('uploads/eventmedia', 'public');
-                $event->eventmedias()->create(['file_path' => '/storage/'.$path]);
+                $event->eventMedias()->create(['file_path' => '/storage/'.$path]);
             }
         }
 
@@ -187,7 +196,7 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
-        foreach($event->eventmedias as $media) {
+        foreach($event->eventMedias as $media) {
             \Storage::disk('public')->delete(str_replace('/storage/','',$media->file_path));
             $media->delete();
         }

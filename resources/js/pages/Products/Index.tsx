@@ -3,19 +3,17 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import { MessageCircle, ShoppingBag } from 'lucide-react';
 
 interface Product {
   id: number;
-  name: string;
-  slug: string;
-  short_description: string;
-  price: number;
-  discount_price: number | null;
-  images: string[];
-  category: string;
-  rating: number;
-  total_reviews: number;
-  stock: number;
+  nama: string; // sebelumnya 'name' -> ganti ke 'nama'
+  deskripsi: string; // sebelumnya 'short_description'
+  harga: number;
+  stok: number;
+  shopeelink?: string | null;
+  images: { gambar: string }[]; // array of ProductImage
+  category: { nama: string }; // relasi category
 }
 
 interface Props {
@@ -36,26 +34,51 @@ interface Props {
   filters: {
     search?: string;
     category?: string;
-    min_price?: number;
-    max_price?: number;
+    min_harga?: number;
+    max_harga?: number;
     sort?: string;
   };
-  categories: string[];
+  categories: {
+  id: number;
+  nama: string;
+}[];
+  auth?: {
+    user?: {
+      role?: string;
+    };
+  };
 }
 
-export default function ProductsIndex({ products, filters, categories }: Props) {
-  const [search, setSearch] = useState(filters.search || '');
-  const [selectedCategory, setSelectedCategory] = useState(filters.category || '');
-  const [minPrice, setMinPrice] = useState(filters.min_price || '');
-  const [maxPrice, setMaxPrice] = useState(filters.max_price || '');
-  const [sortBy, setSortBy] = useState(filters.sort || 'latest');
+export default function ProductsIndex({ 
+  products, 
+  filters = {}, 
+  categories = [],
+  auth
+}: Props) {
+
+  const { data = [], meta = { total: 0 } } = products || {};
+
+  // Pastikan filters tidak null/undefined sebelum dipakai
+  const safeFilters = filters || {};
+
+  const [search, setSearch] = useState(safeFilters.search || '');
+  const [minHarga, setMinHarga] = useState(safeFilters.min_harga || '');
+  const [maxHarga, setMaxHarga] = useState(safeFilters.max_harga || '');
+  const [selectedCategory, setSelectedCategory] = useState(safeFilters.category || '');
+
+  // PERBAIKAN UTAMA DI SINI:
+  // Kita cek: apakah 'sort' itu benar-benar STRING?
+  // Jika filters berupa array [], filters.sort adalah function, ini yang bikin error.
+  const [sortBy, setSortBy] = useState(
+    typeof safeFilters.sort === 'string' ? safeFilters.sort : 'latest'
+  );
 
   const handleFilter = () => {
     router.get('/products', {
       search,
       category: selectedCategory,
-      min_price: minPrice,
-      max_price: maxPrice,
+      min_harga: minHarga,
+      max_harga: maxHarga,
       sort: sortBy,
     }, {
       preserveState: true,
@@ -66,19 +89,44 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
   const handleReset = () => {
     setSearch('');
     setSelectedCategory('');
-    setMinPrice('');
-    setMaxPrice('');
+    setMinHarga('');
+    setMaxHarga('');
     setSortBy('latest');
     router.get('/products');
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (harga: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(price);
+    }).format(harga);
   };
+
+  const getProductImage = (product: Product) => {
+  if (product.images && product.images.length > 0) {
+    return product.images[0].gambar;
+  }
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
+};
+
+const formatQuickOrderMessage = (product: Product) => {
+  return `Halo, saya tertarik dengan produk:
+${product.nama}
+Harga: ${formatPrice(product.harga)}`;
+};
+
+const openWhatsApp = (message: string) => {
+  const phone = '6285608767693'; // ganti nomor WA
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    '_blank'
+  );
+};
+
+const openShopee = (url: string) => {
+  window.open(url, '_blank');
+};
 
   return (
     <>
@@ -142,12 +190,14 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                   >
                     <option value="">Semua Kategori</option>
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat.id} value={cat.id}>
+                        {cat.nama}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Price Range */}
+                {/* Harga Range */}
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Rentang Harga
@@ -155,15 +205,15 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
+                      value={minHarga}
+                      onChange={(e) => setMinHarga(e.target.value)}
                       placeholder="Min"
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
                     <input
                       type="number"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
+                      value={maxHarga}
+                      onChange={(e) => setMaxHarga(e.target.value)}
                       placeholder="Max"
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
@@ -208,35 +258,98 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
 
             {/* Products Grid */}
             <div className="lg:col-span-3">
-              {/* Results Info */}
+              {/* Results Info and Add Button */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-gray-600">
-                  Menampilkan {products.data.length} dari {products.meta.total} produk
+                  Menampilkan {data.length} dari {meta.total} produk
                 </p>
+                {auth?.user?.role === 'admin' && (
+                  <Link
+                    href="/products/create"
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Produk
+                  </Link>
+                )}
               </div>
 
               {/* Products */}
-              {products.data.length > 0 ? (
+              {products.data && products.data.length > 0 ? (
                 <>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.data.map((product, index) => (
+                    {products.data.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Link href={`/products/${product.slug}`}>
-                          <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group">
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group relative h-full flex flex-col">
+
+                          {/* Admin Edit Button */}
+                          {auth?.user?.role === 'admin' && (
+                            <Link
+                              href={`/products/${product.id}/edit`}
+                              className="absolute top-4 left-4 z-10 bg-white/90 hover:bg-amber-500 text-gray-700 hover:text-white p-2 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Link>
+                          )}
+                          {/* Admin Delete Button */}
+                          {auth?.user?.role === 'admin' && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                if (confirm(`Yakin mau hapus produk "${product.nama}"?`)) {
+                                  router.delete(`/products/${product.id}`, {
+                                    preserveScroll: true,
+                                  });
+                                }
+                              }}
+                              className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-red-500 text-gray-700 hover:text-white p-2 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                              title="Hapus Produk"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                                />
+                              </svg>
+                            </button>
+                          )}
+
+                          <Link href={`/products/${product.id}`}>
                             {/* Image */}
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
-                              <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
-                              {product.discount_price && (
-                                <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                                  {Math.round(((product.price - product.discount_price) / product.price) * 100)}% OFF
+                              <img
+                                src={getProductImage(product)}
+                                alt={product.nama}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
+                                }}
+                              />
+                              {product.stok <= 5 && product.stok > 0 && (
+                                <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                                  Stok Terbatas
                                 </div>
                               )}
-                              {product.stock === 0 && (
+                              {product.stok === 0 && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                   <span className="text-white font-bold text-xl">Stok Habis</span>
                                 </div>
@@ -244,67 +357,71 @@ export default function ProductsIndex({ products, filters, categories }: Props) 
                             </div>
 
                             {/* Content */}
-                            <div className="p-5">
-                              <div className="text-xs text-amber-600 font-semibold mb-2">{product.category}</div>
-                              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                {product.name}
-                              </h3>
-                              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                {product.short_description}
-                              </p>
-
-                              {/* Rating */}
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <svg
-                                      key={i}
-                                      className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                                <span className="text-sm text-gray-600">
-                                  {product.rating} ({product.total_reviews})
-                                </span>
+                            <div className="p-5 flex flex-col flex-1">
+                              {product.category && (
+                                <div className="text-xs text-amber-600 font-semibold mb-2">{product.category.nama}</div>
+                              )}
+                              <div className="min-h-[88px]">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                                  {product.nama}
+                                </h3>
+                                <p className="text-gray-600 text-sm line-clamp-2">
+                                  {product.deskripsi}
+                                </p>
                               </div>
 
                               {/* Price */}
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  {product.discount_price ? (
-                                    <>
-                                      <div className="text-sm text-gray-400 line-through">
-                                        {formatPrice(product.price)}
-                                      </div>
-                                      <div className="text-xl font-bold text-amber-600">
-                                        {formatPrice(product.discount_price)}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="text-xl font-bold text-amber-600">
-                                      {formatPrice(product.price)}
-                                    </div>
-                                  )}
+                              <div className="mb-3">
+                                <div className="text-xl font-bold text-amber-600">
+                                  {formatPrice(product.harga)}
                                 </div>
-                                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
+                                <div className="text-sm text-gray-500">
+                                  Stok: {product.stok}
                                 </div>
                               </div>
+
+                              {/* Quick Order Buttons */}
+                              <div className="flex gap-2 mt-auto">
+
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (product.stok > 0) {
+                                      openWhatsApp(formatQuickOrderMessage(product));
+                                    }
+                                  }}
+                                  disabled={product.stok === 0}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
+                                  title="Pesan via WhatsApp"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span className="hidden sm:inline">WA</span>
+                                </button>
+                                {product.shopeelink && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      openShopee(product.shopeelink!);
+                                    }}
+                                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
+                                    title="Beli di Shopee"
+                                  >
+                                    <ShoppingBag className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Shopee</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </Link>
+                          </Link>
+                        </div>
                       </motion.div>
                     ))}
                   </div>
 
                   {/* Pagination */}
-                  {products.meta.last_page > 1 && (
+                  {products?.meta?.last_page > 1 &&  (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
                         {products.links.map((link, index: number) => (

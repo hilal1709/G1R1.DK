@@ -15,7 +15,7 @@ class Product extends Model
         'sku',
         'deskripsi',
         'harga',
-        'shopee_link',
+        'shopeelink',
         'stok'
     ];
 

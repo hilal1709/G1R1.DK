@@ -6,32 +6,72 @@ import {
     Image as ImageIcon,
     DollarSign,
 } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { FormEventHandler, useState, useEffect } from 'react';
 
-export default function ProductCreate() {
+interface Category {
+    id: number;
+    nama: string;
+}
+
+interface Props {
+    categories: Category[];
+}
+
+
+export default function ProductCreate({ categories }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        description: '',
-        price: '',
-        image: null as File | null,
-        category: '',
-        stock: '',
-        is_active: true,
-        short_description: '',
+    nama: '',
+    sku: '',
+    category_id: '',
+    deskripsi: '',
+    harga: '',
+    stok: '',
+    shopeelink: '',
+    images: [] as File[],
     });
 
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    useEffect(() => {
+        return () => {
+            imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [imagePreviews]);
 
+    // Multi-image preview dengan Promise.all supaya urutannya aman
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+        const selectedFiles = e.target.files;
+        if (!selectedFiles) return;
+
+        const newFiles = Array.from(selectedFiles);
+
+        // Validasi ukuran (maks 10MB)
+        const validFiles = newFiles.filter(file => file.size <= 10 * 1024 * 1024);
+        if (validFiles.length < newFiles.length) {
+            alert("Beberapa file diabaikan karena ukurannya lebih dari 10MB");
         }
+
+        // Tambahkan file baru tanpa hapus file lama
+        setData('images', [...data.images, ...newFiles]);
+
+        // Buat preview baru dan gabungkan dengan yang lama
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+
+        e.target.value = ''; // supaya bisa pilih file sama lagi
+    };
+
+    const removeImage = (index: number) => {
+        // Hapus dari data dan preview
+        setData('images', data.images.filter((_, i) => i !== index));
+        const removedPreview = imagePreviews[index];
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        URL.revokeObjectURL(removedPreview); // bersihkan memory
+    };
+
+    const removeAllImages = () => {
+        imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        setImagePreviews([]);
+        setData('images', []);
     };
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -97,58 +137,89 @@ export default function ProductCreate() {
                         className="bg-white rounded-2xl shadow-xl p-8"
                     >
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Image Upload */}
+                            {/* Images */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-4">
-                                    Gambar Produk <span className="text-red-500">*</span>
-                                </label>
-                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-400 transition-colors">
-                                    {imagePreview ? (
-                                        <div className="space-y-4">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="max-w-xs mx-auto rounded-lg shadow-lg"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setImagePreview(null);
-                                                    setData('image', null);
-                                                }}
-                                                className="text-red-500 hover:text-red-700 text-sm"
-                                            >
-                                                Hapus Gambar
-                                            </button>
+                            <label className="block text-sm font-semibold text-gray-700 mb-4">
+                                Gambar Produk <span className="text-red-500">*</span>
+                            </label>
+
+                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-400 transition-colors relative">
+
+                                {/* INPUT FILE SELALU ADA */}
+                                <input
+                                id="images"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageChange}
+                                className="hidden"
+                                />
+
+                                {imagePreviews.length > 0 ? (
+                                <>
+                                    {/* PREVIEW */}
+                                    <div className="grid grid-cols-4 gap-4">
+                                    {imagePreviews.map((src, i) => (
+                                        <div key={i} className="relative">
+                                        <img
+                                            src={src}
+                                            alt={`Preview ${i}`}
+                                            className="w-full h-24 object-cover rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(i)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
+                                            aria-label={`Hapus gambar ${i + 1}`}
+                                        >
+                                            ✕
+                                        </button>
                                         </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
-                                            <div>
-                                                <label htmlFor="image" className="cursor-pointer">
-                                                    <span className="text-amber-600 hover:text-amber-700 font-semibold">
-                                                        Upload gambar
-                                                    </span>
-                                                    <span className="text-gray-500"> atau drag and drop</span>
-                                                    <input
-                                                        id="image"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleImageChange}
-                                                        className="hidden"
-                                                    />
-                                                </label>
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    PNG, JPG, GIF hingga 10MB
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    ))}
+                                    </div>
+
+                                    {/* HAPUS SEMUA */}
+                                    <button
+                                    type="button"
+                                    onClick={removeAllImages}
+                                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-semibold"
+                                    >
+                                    Hapus Semua
+                                    </button>
+
+                                    {/* TAMBAH GAMBAR */}
+                                    <label
+                                    htmlFor="images"
+                                    className="block mt-6 cursor-pointer text-amber-600 font-semibold hover:text-amber-700"
+                                    >
+                                    + Tambah gambar
+                                    </label>
+                                </>
+                                ) : (
+                                <div className="space-y-4">
+                                    <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
+                                    <div>
+                                    <label htmlFor="images" className="cursor-pointer">
+                                        <span className="text-amber-600 hover:text-amber-700 font-semibold">
+                                        Upload gambar
+                                        </span>{' '}
+                                        <span className="text-gray-500">atau drag and drop</span>
+                                    </label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        PNG, JPG, GIF hingga 10MB
+                                    </p>
+                                    </div>
                                 </div>
-                                {errors.image && (
-                                    <p className="text-red-500 text-sm mt-2">{errors.image}</p>
                                 )}
                             </div>
+
+                            {errors.images && (
+                                <p className="text-red-500 text-sm mt-2">{errors.images}</p>
+                            )}
+                            </div>
+
+
+
 
                             {/* Basic Info */}
                             <div className="grid md:grid-cols-2 gap-6">
@@ -159,57 +230,76 @@ export default function ProductCreate() {
                                     <input
                                         type="text"
                                         id="name"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                        value={data.nama}
+                                        onChange={(e) => setData('nama', e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="Masukkan nama produk"
                                         required
                                     />
-                                    {errors.name && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                    {errors.nama && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.nama}</p>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Kategori
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="category"
-                                        value={data.category}
-                                        onChange={(e) => setData('category', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                        placeholder="Contoh: Lampu, Hiasan, dll"
-                                    />
-                                    {errors.category && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.category}</p>
-                                    )}
+                                <label htmlFor="sku" className="block text-sm font-semibold text-gray-700 mb-2">SKU <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    placeholder="Masukkan SKU"
+                                    required
+                                />
+                                {errors.sku && <p className="text-red-500 text-sm mt-1">{errors.sku}</p>}
                                 </div>
                             </div>
 
-                            {/* Price and Stock */}
+                            {/* Category */}
+                            <div>
+                                <label htmlFor="category_id" className="block text-sm font-semibold text-gray-700 mb-2">Kategori <span className="text-red-500">*</span></label>
+                                <select
+                                id="category_id"
+                                className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                value={data.category_id}
+                                onChange={(e) => setData('category_id', e.target.value)}
+                                required
+                                >
+                                <option value="">Pilih Kategori</option>
+                                {categories?.length ? (
+                                    categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.nama}</option>
+                                    ))
+                                ) : (
+                                    <option disabled>Belum ada kategori</option>
+                                )}
+                                </select>
+                                {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
+                            </div>
+
+                            {/* harga and Stock */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label htmlFor="harga" className="block text-sm font-semibold text-gray-700 mb-2">
                                         Harga <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number"
-                                            id="price"
-                                            value={data.price}
-                                            onChange={(e) => setData('price', e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                            id="harga"
+                                            value={data.harga}
+                                            onChange={(e) => setData('harga', e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                             placeholder="0"
                                             min="0"
                                             step="1000"
                                             required
                                         />
                                     </div>
-                                    {errors.price && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                                    {errors.harga && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.harga}</p>
                                     )}
                                 </div>
 
@@ -220,39 +310,19 @@ export default function ProductCreate() {
                                     <input
                                         type="number"
                                         id="stock"
-                                        value={data.stock}
-                                        onChange={(e) => setData('stock', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                        value={data.stok}
+                                        onChange={(e) => setData('stok', e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="0"
                                         min="0"
                                     />
-                                    {errors.stock && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+                                    {errors.stok && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.stok}</p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Excerpt */}
-                            <div>
-                                <label htmlFor="short_description" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Ringkasan Produk
-                                </label>
-                                <textarea
-                                    id="short_description"
-                                    value={data.short_description}
-                                    onChange={(e) => setData('short_description', e.target.value)}
-                                    rows={3}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
-                                    placeholder="Deskripsi singkat produk (max 200 karakter)"
-                                    maxLength={200}
-                                />
-                                <p className="text-sm text-gray-500 mt-1">
-                                    {data.short_description.length}/200 karakter
-                                </p>
-                                {errors.short_description && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.short_description}</p>
-                                )}
-                            </div>
+
 
                             {/* Description */}
                             <div>
@@ -261,30 +331,30 @@ export default function ProductCreate() {
                                 </label>
                                 <textarea
                                     id="description"
-                                    value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
+                                    value={data.deskripsi}
+                                    onChange={(e) => setData('deskripsi', e.target.value)}
                                     rows={8}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                                     placeholder="Deskripsikan produk secara detail..."
                                     required
                                 />
-                                {errors.description && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                                {errors.deskripsi && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.deskripsi}</p>
                                 )}
                             </div>
 
-                            {/* Status */}
-                            <div className="flex items-center">
+                            {/* Shopee Link */}
+                            <div>
+                                <label htmlFor="shopeelink" className="block text-sm font-semibold text-gray-700 mb-2">Link Shopee</label>
                                 <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                                type="text"
+                                id="shopeelink"
+                                value={data.shopeelink}
+                                onChange={(e) => setData('shopeelink', e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                placeholder="https://shopee.co.id/..."
                                 />
-                                <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
-                                    Produk aktif dan dapat dipesan
-                                </label>
+                                {errors.shopeelink && <p className="text-red-500 text-sm mt-1">{errors.shopeelink}</p>}
                             </div>
 
                             {/* Actions */}

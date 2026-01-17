@@ -62,7 +62,7 @@ class CommentController extends Controller
         $comment->komentar = $request->komentar;
         $comment->save();
 
-        return response()->json(['success' => true]);
+        return redirect()->back()->with('success', 'Komentar berhasil diperbarui!');
     }
 
     // Hapus komentar

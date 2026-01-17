@@ -17,7 +17,7 @@ class ArticleController extends Controller
     public function index()
     {
         
-        $articles = Article::with('articleMedias', 'comments.user')
+        $articles = Article::with('articleMedias', 'user', 'comments.user')
         ->latest('created_at') // urutkan berdasarkan tanggal terbaru
         ->paginate(10); // paginate data artikel
         return Inertia::render('Articles/Index', [
@@ -31,7 +31,7 @@ class ArticleController extends Controller
             'judul' => 'required|string|max:200',
             'isi' => 'nullable|string',
             'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov', // validasi file
-            'jenis.*' => 'required|string',
+            //'jenis.*' => 'required|string',
         ]);
 
         $article = Article::create([
@@ -45,7 +45,7 @@ class ArticleController extends Controller
                 $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
                 $article->articleMedias()->create([
                     'file_path' => '/storage/'.$path, // path untuk diakses browser
-                    'jenis' => $request->jenis[$index],
+                    //'jenis' => $request->jenis[$index],
                 ]);
             }
         }
@@ -57,8 +57,8 @@ class ArticleController extends Controller
     public function show(Article $article)
     {
         
-        $article = Article::findOrFail($id);
-        $article->load('articleMedias', 'comments.user'); // tetap load relasi
+        //$article = Article::findOrFail($id);
+        $article->load('user', 'articleMedias', 'comments.user'); // tetap load relasi
         return Inertia::render('Articles/Show', [
             'article' => $article,
         ]);
@@ -70,7 +70,7 @@ class ArticleController extends Controller
             'judul' => 'required|string|max:200',
             'isi' => 'nullable|string',
             'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
-            'jenis.*' => 'required|string',
+            //'jenis.*' => 'required|string',
         ]);
         
         // Update artikel
@@ -112,7 +112,7 @@ class ArticleController extends Controller
                 $path = $file->store('uploads/articlemedia', 'public'); // simpan di storage/app/public/uploads
                 $article->articleMedias()->create([
                     'file_path' => '/storage/'.$path, // path untuk diakses browser
-                    'jenis' => $request->jenis[$index],
+                    //'jenis' => $request->jenis[$index],
                 ]);
             }
         }
@@ -145,6 +145,7 @@ class ArticleController extends Controller
 
     public function edit(Article $article)
     {
+        $article->load('articleMedias');
         return Inertia::render('Articles/Edit', [
             'article' => $article,
         ]);

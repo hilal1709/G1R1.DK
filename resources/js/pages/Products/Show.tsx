@@ -3,32 +3,35 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import { usePage } from '@inertiajs/react';
 
 interface Product {
   id: number;
-  name: string;
-  slug: string;
-  description: string;
-  short_description: string;
-  price: number;
-  discount_price: number | null;
-  stock: number;
+  nama: string;
+  deskripsi: string;
+  harga: number;
+  stok: number;
   sku: string;
-  category: string;
-  images: string[];
+
   shopee_link: string | null;
-  rating: number;
-  total_reviews: number;
+  category: {
+    nama: string;
+  };
+  images: {
+    gambar: string;
+  }[];
   reviews: Review[];
 }
+
 
 interface Review {
   id: number;
   rating: number;
-  comment: string;
+  komentar: string;
   images: string[];
   created_at: string;
   user: {
+    id: number;
     name: string;
   };
 }
@@ -50,20 +53,20 @@ export default function ProductShow({ product, relatedProducts }: Props) {
     }).format(price);
   };
 
-  const finalPrice = product.discount_price || product.price;
+  //const finalPrice = product.discount_price || product.price;
 
   const handleWhatsAppOrder = () => {
     const message = `Halo, saya tertarik dengan produk:
-*${product.name}*
-Kategori: ${product.category}
-Harga: ${formatPrice(finalPrice)}
-Jumlah: ${quantity}
+    *${product.nama}*
+    Kategori: ${product.category.nama}
+    Harga: ${formatPrice(product.harga)}
+    Jumlah: ${quantity}
 
-Total: ${formatPrice(finalPrice * quantity)}
+    Total: ${formatPrice(product.harga * quantity)}
 
-Apakah produk ini masih tersedia?`;
+    Apakah produk ini masih tersedia?`;
 
-    const whatsappUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/6285608767693?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -73,9 +76,27 @@ Apakah produk ini masih tersedia?`;
     }
   };
 
+  const averageRating =
+  product.reviews.length > 0
+    ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+    : 0;
+
+  const { auth } = usePage().props as any;
+
+  const [newReview, setNewReview] = useState('');
+  const [newRating, setNewRating] = useState(5);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editComment, setEditComment] = useState('');
+  const [editRating, setEditRating] = useState(5);
+  const userReview = auth?.user
+  ? product.reviews.find(r => r.user.name === auth.user.name)
+  : null;
+
+
   return (
     <>
-      <Head title={`${product.name} - Damar Kurung Gresik`} />
+      <Head title={`${product.nama} - Damar Kurung Gresik`} />
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         <PublicNavbar activeMenu="/products" />
@@ -88,7 +109,7 @@ Apakah produk ini masih tersedia?`;
               <span className="text-gray-400">/</span>
               <Link href="/products" className="text-gray-500 hover:text-amber-600">Produk</Link>
               <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-semibold">{product.name}</span>
+              <span className="text-gray-900 font-semibold">{product.nama}</span>
             </div>
           </div>
         </div>
@@ -103,14 +124,20 @@ Apakah produk ini masih tersedia?`;
                 animate={{ opacity: 1, x: 0 }}
                 className="bg-white rounded-2xl overflow-hidden shadow-lg mb-4"
               >
-                <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100">
-                  <div className="w-full h-full bg-gray-200" />
-                </div>
+                {product.images.length > 0 ? (
+                  <img
+                    src={product.images[selectedImage].gambar}
+                    alt={product.nama}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="aspect-square bg-gray-200" />
+                )}
               </motion.div>
 
               {/* Thumbnail Grid */}
               <div className="grid grid-cols-4 gap-4">
-                {[0, 1, 2, 3].map((index) => (
+                {product.images.map((img, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -118,7 +145,11 @@ Apakah produk ini masih tersedia?`;
                       selectedImage === index ? 'ring-2 ring-amber-500' : ''
                     }`}
                   >
-                    <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-100" />
+                    <img
+                      src={img.gambar}
+                      alt={`${product.nama} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -130,18 +161,18 @@ Apakah produk ini masih tersedia?`;
               animate={{ opacity: 1, x: 0 }}
             >
               <div className="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold mb-4">
-                {product.category}
+                {product.category.nama}
               </div>
 
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
-
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.nama}</h1>
+                
               {/* Rating */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <svg
                       key={i}
-                      className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`w-5 h-5 ${i < Math.floor(averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -150,44 +181,31 @@ Apakah produk ini masih tersedia?`;
                   ))}
                 </div>
                 <span className="text-gray-600">
-                  {product.rating} ({product.total_reviews} ulasan)
+                  {averageRating.toFixed(1)} ({product.reviews.length} ulasan)
                 </span>
               </div>
+                  
 
               {/* Price */}
               <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-2xl mb-6">
-                {product.discount_price ? (
-                  <div>
-                    <div className="text-gray-400 line-through text-lg mb-1">
-                      {formatPrice(product.price)}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-4xl font-bold text-amber-600">
-                        {formatPrice(product.discount_price)}
-                      </div>
-                      <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        {Math.round(((product.price - product.discount_price) / product.price) * 100)}% OFF
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-4xl font-bold text-amber-600">
-                    {formatPrice(product.price)}
-                  </div>
-                )}
+                <div className="text-4xl font-bold text-amber-600">
+                  {formatPrice(product.harga)}
+                </div>
               </div>
 
-              {/* Description */}
+
+              {/* Description 
               <p className="text-gray-600 leading-relaxed mb-6">
-                {product.short_description}
+                {product.deskripsi}
               </p>
+                */}
 
               {/* Stock & SKU */}
               <div className="flex gap-6 mb-6">
                 <div>
                   <span className="text-gray-600">Stok:</span>
-                  <span className={`ml-2 font-semibold ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {product.stock > 0 ? `${product.stock} tersedia` : 'Habis'}
+                  <span className={`ml-2 font-semibold ${product.stok > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {product.stok > 0 ? `${product.stok} tersedia` : 'Habis'}
                   </span>
                 </div>
                 <div>
@@ -197,7 +215,7 @@ Apakah produk ini masih tersedia?`;
               </div>
 
               {/* Quantity */}
-              {product.stock > 0 && (
+              {product.stok > 0 && (
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Jumlah
@@ -205,20 +223,20 @@ Apakah produk ini masih tersedia?`;
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold"
+                      className="w-10 h-10 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 flex items-center justify-center font-bold"
                     >
                       -
                     </button>
                     <input
                       type="number"
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
-                      className="w-20 text-center border border-gray-300 rounded-lg py-2 font-semibold"
+                      onChange={(e) => setQuantity(Math.max(1, Math.min(product.stok, parseInt(e.target.value) || 1)))}
+                      className="w-20 text-center border text-gray-900 border-gray-300 rounded-lg py-2 font-semibold "
                     />
                     <button
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                      disabled={quantity >= product.stock}
-                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setQuantity(Math.min(product.stok, quantity + 1))}
+                      disabled={quantity >= product.stok}
+                      className="w-10 h-10 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 flex items-center justify-center font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
                     </button>
@@ -235,18 +253,18 @@ Apakah produk ini masih tersedia?`;
                       onError: () => alert('Gagal menambahkan ke keranjang'),
                     });
                   }}
-                  disabled={product.stock === 0}
+                  disabled={product.stok === 0}
                   className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:shadow-xl disabled:bg-gray-300 disabled:shadow-none text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
-                  {product.stock > 0 ? 'Tambah ke Keranjang' : 'Stok Habis'}
+                  {product.stok > 0 ? 'Tambah ke Keranjang' : 'Stok Habis'}
                 </button>
 
                 <button
                   onClick={handleWhatsAppOrder}
-                  disabled={product.stock === 0}
+                  disabled={product.stok === 0}
                   className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -298,84 +316,239 @@ Apakah produk ini masih tersedia?`;
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Deskripsi Produk</h2>
             <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed">
-              {product.description.split('\n').map((paragraph, index) => (
+              {product.deskripsi.split('\n').map((paragraph, index) => (
                 <p key={index} className="mb-4">{paragraph}</p>
               ))}
             </div>
           </div>
 
-          {/* Reviews */}
-          {product.reviews && product.reviews.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Ulasan Pembeli ({product.total_reviews})
-              </h2>
-              <div className="space-y-6">
-                {product.reviews.map((review) => (
-                  <div key={review.id} className="border-b last:border-0 pb-6 last:pb-0">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {review.user.name.charAt(0)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <div className="font-bold text-gray-900">{review.user.name}</div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(review.created_at).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
-                              })}
-                            </div>
-                          </div>
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`w-5 h-5 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-gray-700">{review.comment}</p>
-                      </div>
-                    </div>
+          {/* REVIEWS */}
+<div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    Ulasan Pembeli ({product.reviews.length})
+  </h2>
+
+  {/* LIST REVIEW */}
+  {product.reviews.length > 0 ? (
+    <div className="space-y-6 mb-8">
+      {product.reviews.map((review) => (
+        <div key={review.id} className="border-b last:border-0 pb-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+              {review.user.name.charAt(0)}
+            </div>
+
+            <div className="flex-1">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="font-bold text-gray-900">
+                    {review.user.name}
                   </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(review.created_at).toLocaleDateString('id-ID')}
+                  </div>
+                </div>
+
+                {/* ACTION */}
+                {auth?.user?.id === review.user.id && (
+                  <div className="flex gap-3 text-sm">
+                    <button
+                      onClick={() => {
+                        setEditingId(review.id);
+                        setEditComment(review.komentar);
+                        setEditRating(review.rating);
+                      }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (!confirm('Hapus review ini?')) return;
+                        router.delete(`/reviews/${review.id}`, {
+                          onSuccess: () =>
+                            router.reload({ only: ['product'] }),
+                        });
+                      }}
+                      className="text-red-600 hover:underline"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* RATING */}
+              <div className="flex mb-2">
+                {[1,2,3,4,5].map((i) => (
+                  <span
+                    key={i}
+                    className={`text-lg ${
+                      i <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                    }`}
+                  >
+                    ★
+                  </span>
                 ))}
               </div>
+
+              {/* KOMENTAR */}
+              {editingId === review.id ? (
+                <>
+                  {/* EDIT RATING */}
+                  <div className="flex gap-1 mb-2">
+                    {[1,2,3,4,5].map((i) => (
+                      <button
+                        key={i}
+                        onClick={() => setEditRating(i)}
+                        className={`text-xl ${
+                          i <= editRating
+                            ? 'text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    className="w-full border text-gray-700 rounded-lg p-2 mb-2"
+                    value={editComment}
+                    onChange={(e) => setEditComment(e.target.value)}
+                  />
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        router.put(`/reviews/${review.id}`, {
+                          komentar: editComment,
+                          rating: editRating,
+                        }, {
+                          onSuccess: () => {
+                            setEditingId(null);
+                            router.reload({ only: ['product'] });
+                          },
+                        });
+                      }}
+                      className="text-green-600 font-semibold"
+                    >
+                      Simpan
+                    </button>
+
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-gray-500"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-700">{review.komentar}</p>
+              )}
             </div>
-          )}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="text-gray-500 mb-6">Belum ada ulasan.</p>
+  )}
+
+  {/* FORM TAMBAH REVIEW */}
+  {auth?.user && !userReview && (
+    <div className="border-t pt-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-3">
+        Tulis Ulasan
+      </h3>
+
+      {/* RATING */}
+      <div className="flex gap-1 mb-3">
+        {[1,2,3,4,5].map((i) => (
+          <button
+            key={i}
+            onClick={() => setNewRating(i)}
+            className={`text-2xl ${
+              i <= newRating ? 'text-yellow-400' : 'text-gray-300'
+            }`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+
+      {/* KOMENTAR */}
+      <textarea
+        className="w-full border text-gray-700 rounded-xl p-3 mb-4"
+        rows={4}
+        placeholder="Bagaimana kualitas produknya?"
+        value={newReview}
+        onChange={(e) => setNewReview(e.target.value)}
+      />
+
+      <button
+        onClick={() => {
+          router.post('/reviews', {
+            product_id: product.id,
+            rating: newRating,
+            komentar: newReview,
+          }, {
+            onSuccess: () => {
+              setNewReview('');
+              setNewRating(5);
+              router.reload({ only: ['product'] });
+            },
+          });
+        }}
+        className="px-6 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-semibold"
+      >
+        Kirim Ulasan
+      </button>
+    </div>
+  )}
+</div>
+
+            
 
           {/* Related Products */}
-          {relatedProducts && relatedProducts.length > 0 && (
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">Produk Terkait</h2>
-              <div className="grid md:grid-cols-4 gap-6">
-                {relatedProducts.map((related) => (
-                  <Link key={related.id} href={`/products/${related.slug}`}>
-                    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all group">
-                      <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100">
-                        <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform duration-500" />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600">
-                          {related.name}
-                        </h3>
-                        <div className="text-lg font-bold text-amber-600">
-                          {formatPrice(related.discount_price || related.price)}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+{relatedProducts && relatedProducts.length > 0 && (
+  <div className="mt-16">
+    <h2 className="text-3xl font-bold text-gray-900 mb-8">Produk Terkait</h2>
+    <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+      {relatedProducts.map((related) => (
+        <Link key={related.id} href={`/products/${related.id}`}>
+          <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all group cursor-pointer">
+            {/* Image */}
+            <div className="aspect-square overflow-hidden bg-gradient-to-br from-amber-100 to-orange-100">
+              {related.images.length > 0 ? (
+                <img
+                  src={related.images[0].gambar}
+                  alt={related.nama}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200" />
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600">
+                {related.nama}
+              </h3>
+              <div className="text-lg font-bold text-amber-600">
+                {formatPrice(related.harga)}
               </div>
             </div>
-          )}
+          </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
+
         </div>
       </div>
     </>

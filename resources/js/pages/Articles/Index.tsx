@@ -17,14 +17,11 @@ import PublicNavbar from '@/components/PublicNavbar';
 
 interface Article {
     id: number;
-    title: string;
-    content: string;
-    image: string | null;
-    author: string | null;
-    category: string | null;
-    excerpt: string | null;
-    is_published: boolean;
-    published_at: string | null;
+    judul: string;       // judul artikel
+    isi: string | null;  // isi artikel
+    article_medias?: { file_path: string }[];
+    user: { name: string } | null; // author
+    comments: any[];
     created_at: string;
     updated_at: string;
 }
@@ -46,7 +43,7 @@ interface PageProps {
 
 export default function ArticlesIndex({ articles }: PageProps) {
     const [searchQuery, setSearchQuery] = useState('');
-
+    
     const handleDelete = (id: number) => {
         if (
             confirm(
@@ -58,8 +55,9 @@ export default function ArticlesIndex({ articles }: PageProps) {
     };
 
     const filteredArticles = articles.data.filter((article) =>
-        article.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        article.judul.toLowerCase().includes(searchQuery.toLowerCase()),
     );
+    
 
     return (
         <>
@@ -67,7 +65,7 @@ export default function ArticlesIndex({ articles }: PageProps) {
 
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
                 <PublicNavbar activeMenu="/articles" />
-
+            
                 {/* Header */}
                 <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -138,10 +136,10 @@ export default function ArticlesIndex({ articles }: PageProps) {
                             >
                                 {/* Image */}
                                 <div className="relative h-48 bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
-                                    {article.image ? (
+                                    {article.article_medias?.length ? (
                                         <img
-                                            src={`/storage/${article.image}`}
-                                            alt={article.title}
+                                            src={article.article_medias[0].file_path}
+                                            alt={article.judul}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                         />
                                     ) : (
@@ -149,49 +147,31 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                             <Tag className="h-16 w-16 text-amber-300" />
                                         </div>
                                     )}
-
-                                    {/* Status Badge */}
-                                    <div className="absolute top-3 right-3">
-                                        {article.is_published ? (
-                                            <span className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full shadow-lg">
-                                                <CheckCircle className="h-3 w-3" />
-                                                Published
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded-full shadow-lg">
-                                                <XCircle className="h-3 w-3" />
-                                                Draft
-                                            </span>
-                                        )}
-                                    </div>
+                                
+                                    
                                 </div>
 
                                 {/* Content */}
                                 <div className="p-5">
                                     <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                        {article.title}
+                                        {article.judul}
                                     </h3>
 
                                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                                        {article.excerpt ||
-                                            article.content.substring(0, 150) +
+                                        {article.isi ||
+                                            article.isi?.substring(0, 150) +
                                                 '...'}
                                     </p>
 
                                     {/* Meta Info */}
                                     <div className="space-y-2 mb-4">
-                                        {article.author && (
+                                        {article.user && (
                                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                                 <User className="h-4 w-4" />
-                                                {article.author}
+                                                {article.user.name}
                                             </div>
                                         )}
-                                        {article.category && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                <Tag className="h-4 w-4" />
-                                                {article.category}
-                                            </div>
-                                        )}
+                                    
                                         <div className="flex items-center gap-2 text-sm text-gray-500">
                                             <Calendar className="h-4 w-4" />
                                             {new Date(

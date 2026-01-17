@@ -3,32 +3,35 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import { usePage } from '@inertiajs/react';
+
 
 interface Event {
   id: number;
-  title: string;
-  slug: string;
-  short_description: string;
-  description: string;
-  image: string;
-  location: string;
-  start_date: string;
-  end_date: string;
-  max_participants: number | null;
-  registered_participants: number;
+  nama: string;
+  deskripsi: string;
+  lokasi: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string | null;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  is_featured: boolean;
-  created_at: string;
+  max_pendaftar: number | null;
+  registered_participants: number;
+  event_medias?: {
+    id: number;
+    file_path: string;
+  }[];
+  comments?: Comment[];
 }
 
 interface RelatedEvent {
   id: number;
-  title: string;
-  slug: string;
-  image: string;
-  start_date: string;
-  location: string;
-  status: string;
+  nama: string;
+  tanggal_mulai: string;
+  lokasi: string;
+  event_medias?: {
+    id: number;
+    file_path: string;
+  }[];
 }
 
 interface Props {
@@ -37,18 +40,26 @@ interface Props {
   isRegistered: boolean;
 }
 
+interface User {
+  id: number;
+  name: string;
+}
+
+interface Comment {
+  id: number;
+  komentar: string;
+  created_at: string;
+  user_id: number;
+  user: User;
+}
+
 export default function EventShow({ event, relatedEvents, isRegistered }: Props) {
   const [isRegistering, setIsRegistering] = useState(false);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (date: string) => {
+  return date.replace('T', ' ').slice(0, 16) + ' WIB';
+};
+
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -73,23 +84,50 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
     );
   };
 
+  const [isRegisteredState, setIsRegisteredState] = useState(isRegistered);
+
+  const handleCancelRegistration = () => {
+    if (!confirm('Apakah Anda yakin ingin membatalkan pendaftaran?')) return;
+
+    setIsRegistering(true);
+
+    router.delete(`/events/${event.id}/registration`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        alert('Pendaftaran dibatalkan.');
+        setIsRegistering(false);
+        setIsRegisteredState(false);
+        router.reload({ only: ['event', 'isRegistered'] });
+      },
+      onError: (errors) => {
+        const errorMessage = errors?.message || 'Gagal membatalkan pendaftaran.';
+        alert(errorMessage);
+        setIsRegistering(false);
+      },
+    });
+  };
+
+
   const handleRegister = () => {
     if (isRegistered) {
       alert('Anda sudah terdaftar di event ini!');
       return;
     }
 
-    if (event.max_participants && event.registered_participants >= event.max_participants) {
+    if (event.max_pendaftar &&  event.registered_participants >=  event.max_pendaftar) {
       alert('Maaf, kuota peserta sudah penuh!');
       return;
     }
 
     setIsRegistering(true);
-    router.post(`/events/${event.slug}/register`, {}, {
+    router.post(
+    `/events/${event.id}/registration`,
+    {}, {
       preserveScroll: true,
       onSuccess: (page) => {
         alert('Pendaftaran berhasil!');
         setIsRegistering(false);
+        setIsRegisteredState(true);
         // Reload halaman untuk update data terbaru
         router.reload({ only: ['event', 'isRegistered'] });
       },
@@ -101,9 +139,14 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
     });
   };
 
+  const { auth } = usePage().props as any;
+  const [newComment, setNewComment] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState('');
+
   const handleShare = (platform: string) => {
     const url = window.location.href;
-    const text = `${event.title} - Damar Kurung Gresik`;
+    const text = `${event.nama} - Damar Kurung Gresik`;
 
     const shareUrls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
@@ -114,12 +157,21 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank', 'width=600,height=400');
   };
 
-  const isFull = event.max_participants && event.registered_participants >= event.max_participants;
-  const canRegister = event.status === 'upcoming' && !isFull && !isRegistered;
+  const isFull = event.max_pendaftar &&  event.registered_participants >= event.max_pendaftar;
+  const canRegister = event.status === 'upcoming' && !isFull && !isRegisteredState;
+
+
+    const excerpt = (text: string, words = 20) =>
+    text
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .slice(0, words)
+      .join(' ') + '...';
 
   return (
     <>
-      <Head title={`${event.title} - Damar Kurung Gresik`} />
+      <Head title={`${event.nama} - Damar Kurung Gresik`} />
 
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         <PublicNavbar activeMenu="/events" />
@@ -132,7 +184,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
             <span className="mx-2">/</span>
             <Link href="/events" className="hover:text-amber-600">Event</Link>
             <span className="mx-2">/</span>
-            <span className="text-gray-900">{event.title}</span>
+            <span className="text-gray-900">{event.nama}</span>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-12">
@@ -144,12 +196,12 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl overflow-hidden mb-8 aspect-video relative"
               >
-                {event.image ? (
-                  <img
-                    src={`/storage/${event.image}`}
-                    alt={event.title}
-                    className="w-full h-full object-contain"
-                  />
+                {event.event_medias?.length ? (
+                          <img
+                            src={event.event_medias[0].file_path}
+                            alt={event.nama}
+                            className="w-full h-full object-contain"
+                          />
                 ) : (
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                     <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,11 +212,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                 <div className="absolute top-6 right-6">
                   {getStatusBadge(event.status)}
                 </div>
-                {event.is_featured && (
-                  <div className="absolute top-6 left-6 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                    Featured Event
-                  </div>
-                )}
+                
               </motion.div>
 
               {/* Event Title */}
@@ -174,8 +222,8 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                 transition={{ delay: 0.1 }}
                 className="mb-8"
               >
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">{event.title}</h1>
-                <p className="text-xl text-gray-600">{event.short_description}</p>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">{event.nama}</h1>
+                <p className="text-xl text-gray-600">{excerpt(event.deskripsi, 20)}</p>
               </motion.div>
 
               {/* Event Details */}
@@ -195,9 +243,9 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Tanggal & Waktu</h3>
-                      <p className="text-gray-600 text-sm">{formatDate(event.start_date)}</p>
-                      {event.start_date !== event.end_date && (
-                        <p className="text-gray-500 text-sm">s/d {formatDate(event.end_date)}</p>
+                      <p className="text-gray-600 text-sm">{formatDate(event.tanggal_mulai)}</p>
+                      {event.tanggal_selesai && event.tanggal_mulai !== event.tanggal_selesai && (
+                        <p className="text-gray-500 text-sm">s/d {formatDate(event.tanggal_selesai)}</p>
                       )}
                     </div>
                   </div>
@@ -212,7 +260,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Lokasi</h3>
-                      <p className="text-gray-600 text-sm">{event.location}</p>
+                      <p className="text-gray-600 text-sm">{event.lokasi}</p>
                     </div>
                   </div>
                 </div>
@@ -227,8 +275,143 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
               >
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Tentang Event</h2>
                 <div className="prose max-w-none text-gray-600 whitespace-pre-line">
-                  {event.description}
+                  {event.deskripsi}
                 </div>
+              </motion.div>
+
+              {/* Comments Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-white rounded-2xl p-8 shadow-lg mb-8"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Komentar
+                </h2>
+
+                {/* List Komentar */}
+                {event.comments && event.comments.length > 0 ? (
+                  <div className="space-y-4">
+                    {event.comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="border-b pb-4"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-amber-700">
+                              {comment.user.name}
+                            </p>
+
+                            {editingId === comment.id ? (
+                              <textarea
+                                className="w-full mt-2 border text-gray-900 rounded-lg p-2"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                              />
+                            ) : (
+                              <p className="text-gray-700 mt-1">
+                                {comment.komentar}
+                              </p>
+                            )}
+
+                            <p className="text-xs text-gray-400 mt-1">
+                              {new Date(comment.created_at).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+
+                          {/* Action */}
+                          {auth?.user?.id === comment.user_id && (
+                            <div className="flex gap-2 text-sm">
+                              {editingId === comment.id ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      router.put(`/comments/${comment.id}`, {
+                                        komentar: editValue,
+                                      }, {
+                                        onSuccess: () => {
+                                          setEditingId(null);
+                                          setEditValue('');
+                                          router.reload({ only: ['event'] });
+                                        },
+                                      });
+                                    }}
+                                    className="text-green-600 hover:underline"
+                                  >
+                                    Simpan
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingId(null)}
+                                    className="text-gray-500 hover:underline"
+                                  >
+                                    Batal
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setEditingId(comment.id);
+                                      setEditValue(comment.komentar);
+                                    }}
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (!confirm('Hapus komentar ini?')) return;
+                                      router.delete(`/comments/${comment.id}`, {
+                                        onSuccess: () => router.reload({ only: ['event'] }),
+                                      });
+                                    }}
+                                    className="text-red-600 hover:underline"
+                                  >
+                                    Hapus
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Belum ada komentar.</p>
+                )}
+
+                {/* Form Tambah Komentar */}
+                {auth?.user && (
+                  <div className="mt-6">
+                    <textarea
+                      className="w-full border text-gray-900 rounded-xl p-3 focus:ring focus:ring-amber-300"
+                      rows={3}
+                      placeholder="Tulis komentar..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+
+                    <button
+                      onClick={() => {
+                        router.post('/comments', {
+                          event_id: event.id,
+                          komentar: newComment,
+                        }, {
+                          onSuccess: () => {
+                            setNewComment('');
+                            router.reload({ only: ['event'] });
+                          },
+                        });
+                      }}
+                      className="mt-3 px-6 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700"
+                    >
+                      Kirim Komentar
+                    </button>
+                  </div>
+                )}
               </motion.div>
 
               {/* Share */}
@@ -283,19 +466,19 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Pendaftaran</h2>
 
                 {/* Participants */}
-                {event.max_participants && (
+                {event.max_pendaftar && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-gray-600">Peserta Terdaftar</span>
                       <span className="font-bold text-amber-600">
-                        {event.registered_participants} / {event.max_participants}
+                        {event.registered_participants } / {event.max_pendaftar}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
                         className="bg-gradient-to-r from-amber-500 to-orange-600 h-3 rounded-full transition-all"
                         style={{
-                          width: `${Math.min(100, (event.registered_participants / event.max_participants) * 100)}%`
+                          width: `${Math.min(100, (event.registered_participants / event.max_pendaftar) * 100)}%`
                         }}
                       />
                     </div>
@@ -307,7 +490,15 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  {canRegister ? (
+                  {isRegisteredState ? (
+                    <button
+                      onClick={handleCancelRegistration}
+                      disabled={isRegistering}
+                      className="w-full bg-red-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRegistering ? 'Membatalkan...' : 'Batalkan Pendaftaran'}
+                    </button>
+                  ) : canRegister ? (
                     <button
                       onClick={handleRegister}
                       disabled={isRegistering}
@@ -315,10 +506,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                     >
                       {isRegistering ? 'Mendaftar...' : 'Daftar Sekarang'}
                     </button>
-                  ) : isRegistered ? (
-                    <div className="bg-green-100 text-green-800 py-4 rounded-xl font-bold text-center">
-                      Anda Sudah Terdaftar
-                    </div>
+
                   ) : isFull ? (
                     <div className="bg-red-100 text-red-800 py-4 rounded-xl font-bold text-center">
                       Kuota Penuh
@@ -333,6 +521,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                     </div>
                   )}
                 </div>
+
               </motion.div>
 
               {/* Related Events */}
@@ -348,14 +537,14 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                     {relatedEvents.map((relatedEvent) => (
                       <Link
                         key={relatedEvent.id}
-                        href={`/events/${relatedEvent.slug}`}
+                        href={`/events/${relatedEvent.id}`}
                         className="flex gap-4 group"
                       >
                         <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg overflow-hidden flex-shrink-0">
-                          {relatedEvent.image ? (
+                          {relatedEvent.event_medias?.length ? (
                             <img
-                              src={`/storage/${relatedEvent.image}`}
-                              alt={relatedEvent.title}
+                              src={relatedEvent.event_medias[0].file_path}
+                              alt={relatedEvent.nama}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                             />
                           ) : (
@@ -368,10 +557,10 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900 group-hover:text-amber-600 transition-colors line-clamp-2 mb-1">
-                            {relatedEvent.title}
+                            {relatedEvent.nama}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            {new Date(relatedEvent.start_date).toLocaleDateString('id-ID', {
+                            {new Date(relatedEvent.tanggal_mulai).toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'short',
                               year: 'numeric'

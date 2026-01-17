@@ -21,7 +21,7 @@ class ReviewController extends Controller
             'rating'      => 'required|integer|min:1|max:5',
             'komentar'      => 'required|string|max:1000',
             'product_id'  => 'required|exists:products,id',
-            'media' => 'required|file|mimes:jpg,jpeg,png,mp4,mov',
+            'media' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
         ]);
 
         // Cek apakah user sudah pernah review product ini
@@ -118,7 +118,7 @@ class ReviewController extends Controller
         }
     }
 
-        return response()->json(['success' => true]);
+        return redirect()->back()->with('success', 'Review berhasil diupdate!');
     }
 
 
