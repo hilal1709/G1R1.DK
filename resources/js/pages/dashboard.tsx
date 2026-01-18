@@ -25,27 +25,31 @@ interface Stats {
 
 interface Article {
     id: number;
-    title: string;
+    judul: string;
     excerpt: string;
-    views: number;
+    author: string;
+    image: string;
     date: string;
 }
 
 interface Event {
     id: number;
-    title: string;
-    date: string;
-    participants: number;
-    max_participants: number;
+    nama: string;
+    tanggal_mulai: string;      // misal: '18 Jan 2026 10:00'
+    tanggal_selesai: string;
+    registered_participants: number;
+    max_pendaftar: number;
+    image: string;
 }
 
 interface Product {
     id: number;
-    name: string;
-    price: number;
-    sold: number;
-    image: string | null;
+    nama: string;
+    harga: number;
+    stok: number;
+    image: string;
 }
+
 
 interface DashboardProps {
     stats: Stats;
@@ -359,21 +363,25 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                         <div className="grid gap-6 md:grid-cols-3">
                             {recentArticles && recentArticles.length > 0 ? (
                                 recentArticles.map((article) => (
-                                <div key={article.id} className="rounded-xl border border-amber-100 bg-white p-6 shadow-lg hover:shadow-xl transition-shadow">
-                                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
-                                        {article.title}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                        {article.excerpt}
-                                    </p>
-                                    <div className="flex items-center justify-between text-xs text-gray-500">
-                                        <span className="flex items-center gap-1">
-                                            <Eye className="w-3 h-3" />
-                                            {article.views} views
-                                        </span>
-                                        <span>{article.date}</span>
+                                <div key={article.id} className="rounded-xl border border-amber-100 bg-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                                    <img
+                                        src={article.image}
+                                        alt={article.judul}
+                                        className="h-40 w-full object-cover"
+                                        onError={(e) => { e.currentTarget.src = '/images/article-placeholder.jpg'; }}
+                                    />
+                                    <div className="p-6">
+                                        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{article.judul}</h3>
+                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{article.excerpt}</p>
+                                        <div className="flex items-center justify-between text-xs text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                                <Eye className="w-3 h-3" /> views
+                                            </span>
+                                            <span>{article.date}</span>
+                                        </div>
                                     </div>
                                 </div>
+
                             ))
                             ) : (
                                 <div className="col-span-3 text-center py-12 text-gray-500">
@@ -401,19 +409,20 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                             {upcomingEvents && upcomingEvents.length > 0 ? (
                                 upcomingEvents.map((event) => (
                                 <div key={event.id} className="rounded-xl border border-amber-100 bg-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                                    <div className="h-32 bg-gradient-to-br from-green-400 to-emerald-500" />
+                                    <img
+                                        src={event.image}
+                                        alt={event.nama}
+                                        className="h-40 w-full object-cover"
+                                        onError={(e) => { e.currentTarget.src = '/images/event-placeholder.jpg'; }}
+                                    />
                                     <div className="p-6">
-                                        <h3 className="font-bold text-gray-900 mb-2">
-                                            {event.title}
-                                        </h3>
+                                        <h3 className="font-bold text-gray-900 mb-2">{event.nama}</h3>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600 flex items-center gap-1">
-                                                <Calendar className="w-4 h-4" />
-                                                {event.date}
+                                                <Calendar className="w-4 h-4" /> {event.tanggal_mulai}
                                             </span>
                                             <span className="text-gray-600 flex items-center gap-1">
-                                                <Users className="w-4 h-4" />
-                                                {event.participants}
+                                                <Users className="w-4 h-4" /> {event.registered_participants}
                                             </span>
                                         </div>
                                     </div>
@@ -447,7 +456,7 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                                         {product.image ? (
                                             <img
                                                 src={product.image}
-                                                alt={product.name}
+                                                alt={product.nama}
                                                 className="h-40 w-full object-cover"
                                                 onError={(e) => {
                                                     e.currentTarget.src = '/images/product-placeholder.jpg';
@@ -458,14 +467,14 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                                         )}
                                     <div className="p-6">
                                         <h3 className="font-bold text-gray-900 mb-2">
-                                            {product.name}
+                                            {product.nama}
                                         </h3>
                                         <div className="flex items-center justify-between">
                                             <span className="text-lg font-bold text-amber-600">
-                                                Rp {product.price.toLocaleString('id-ID')}
+                                                Rp {product.harga.toLocaleString('id-ID')}
                                             </span>
                                             <span className="text-sm text-gray-600">
-                                                {product.sold} terjual
+                                                {/*product.sold*/} terjual
                                             </span>
                                         </div>
                                     </div>

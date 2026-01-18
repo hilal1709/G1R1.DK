@@ -4,33 +4,33 @@ import { Link } from '@inertiajs/react';
 
 interface Product {
   id: number;
-  name: string;
-  description: string;
-  price: number;
+  nama: string;
+  deskripsi: string;
+  harga: number;
   image: string;
-  stock: number;
-  category: string;
+  stok: number;
+  category: string | null;
 }
 
 interface Event {
   id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
+  nama: string;
+  deskripsi: string;
+  lokasi: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
   image: string;
-  max_participants: number;
-  current_participants: number;
+  max_pendaftar: number;
+  registered_participants: number;
 }
 
 interface Article {
   id: number;
-  title: string;
+  judul: string;
   excerpt: string;
-  content: string;
+
   image: string;
-  published_at: string;
+
   author: string;
 }
 
@@ -477,7 +477,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                     <img
                       src={product.image}
-                      alt={product.name}
+                      alt={product.nama}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.src = '/images/product-placeholder.jpg';
@@ -485,11 +485,11 @@ export default function Home({ products, events, articles }: HomeProps) {
                     />
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{product.nama}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{product.deskripsi}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold text-amber-600">
-                        Rp {product.price.toLocaleString('id-ID')}
+                        Rp {product.harga.toLocaleString('id-ID')}
                       </span>
                       <Link
                         href={`/products/${product.id}`}
@@ -621,7 +621,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
                     <img
                       src={event.image}
-                      alt={event.title}
+                      alt={event.nama}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.src = '/images/event-placeholder.jpg';
@@ -632,31 +632,35 @@ export default function Home({ products, events, articles }: HomeProps) {
                     </div>
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{event.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{event.nama}</h3>
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-gray-600">
                         <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span>{new Date(event.date).toLocaleDateString('id-ID', {
+                        <span>{new Date(event.tanggal_mulai).toLocaleDateString('id-ID', {
                           day: 'numeric',
                           month: 'long',
                           year: 'numeric'
-                        })} - {event.time}</span>
+                        })} - {new Date(event.tanggal_mulai).toLocaleTimeString('id-ID', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        </span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>{event.location}</span>
+                        <span>{event.lokasi}</span>
                       </div>
-                      {event.max_participants > 0 && (
+                      {event.max_pendaftar > 0 && (
                         <div className="flex items-center text-gray-600">
                           <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                           </svg>
-                          <span>{event.current_participants} / {event.max_participants} peserta</span>
+                          <span>{event.registered_participants} / {event.max_pendaftar} peserta</span>
                         </div>
                       )}
                     </div>

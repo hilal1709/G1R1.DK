@@ -19,51 +19,64 @@ class DashboardController extends Controller
             'total_events' => Event::count(),
             'total_products' => Product::count(),
             'total_users' => User::count(),
-            'active_events' => Event::where('date', '>=', now())->count(),
+            'active_events' => Event::active()->count(),
         ];
 
         // Artikel terbaru (3 artikel)
-        $recentArticles = Article::where('is_published', true)
-            ->latest('published_at')
+        $recentArticles = Article::with(['user', 'articleMedias'])
+            ->latest()
             ->take(3)
             ->get()
             ->map(function ($article) {
                 return [
                     'id' => $article->id,
-                    'title' => $article->title,
-                    'excerpt' => $article->excerpt ?? substr(strip_tags($article->content), 0, 100) . '...',
-                    'views' => 0, // Bisa ditambahkan field views di migration jika diperlukan
-                    'date' => $article->published_at?->diffForHumans() ?? $article->created_at->diffForHumans(),
+                    'judul' => $article->judul,
+                    'excerpt' => \Illuminate\Support\Str::limit(strip_tags($article->isi), 100),
+                    'author' => $article->user?->name ?? 'Admin',
+                    
+                    'image' => $article->articleMedias->first()
+                        ? asset($article->articleMedias->first()->file_path)
+                        : '/images/article-placeholder.jpg',
+                    'date' => $article->created_at->diffForHumans(),
                 ];
             });
 
         // Event mendatang (3 event)
-        $upcomingEvents = Event::where('start_date', '>=', now())
-            ->orderBy('start_date', 'asc')
+        $upcomingEvents = Event::with(['eventMedias'])
+            ->withCount('registrations')
+            ->upcoming()
+            ->orderBy('tanggal_mulai', 'asc')
             ->take(3)
             ->get()
             ->map(function ($event) {
                 return [
                     'id' => $event->id,
-                    'title' => $event->title,
-                    'date' => $event->start_date->format('d M Y'),
-                    'participants' => $event->registered_participants,
-                    'max_participants' => $event->max_participants,
+                    'nama' => $event->nama,
+                    'tanggal_mulai' => $event->tanggal_mulai->format('d M Y H:i'),
+                    'tanggal_selesai' => $event->tanggal_selesai->format('d M Y H:i'),
+                    'registered_participants' => $event->registered_participants,
+                    'max_pendaftar' => $event->max_pendaftar,
+                    'image' => $event->eventMedias->first()
+                        ? asset( $event->eventMedias->first()->file_path)
+                        : '/images/event-placeholder.jpg',
                 ];
             });
 
-        // Produk unggulan (3 produk dengan stock terbanyak atau terbaru)
-        $featuredProducts = Product::where('stock', '>', 0)
+        // Produk unggulan (3 produk)
+        $featuredProducts = Product::with('images')
+            ->where('stok', '>', 0)
             ->latest()
             ->take(3)
             ->get()
             ->map(function ($product) {
                 return [
                     'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'sold' => 0, // Bisa ditambahkan field sold di migration jika diperlukan
-                    'image' => $product->image ? asset('storage/' . $product->image) : null,
+                    'nama' => $product->nama,
+                    'harga' => $product->harga,
+                    'stok' => $product->stok,
+                    'image' => $product->images->first()
+                    ? asset($product->images->first()->gambar)
+                    : '/images/product-placeholder.jpg',
                 ];
             });
 

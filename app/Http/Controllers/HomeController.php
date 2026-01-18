@@ -12,56 +12,70 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Ambil produk terbaru (6 produk)
-        $products = Product::where('stock', '>', 0)
+         // Produk terbaru (6)
+        $products = Product::with(['category', 'images'])
+            ->where('stok', '>', 0)
             ->latest()
             ->take(6)
             ->get()
             ->map(function ($product) {
                 return [
                     'id' => $product->id,
-                    'name' => $product->name,
-                    'description' => $product->description,
-                    'price' => $product->price,
-                    'image' => $product->image ? asset('storage/' . $product->image) : '/images/product-placeholder.jpg',
-                    'stock' => $product->stock,
-                    'category' => $product->category,
+                    'nama' => $product->nama,
+                    'deskripsi' => $product->deskripsi,
+                    'harga' => $product->harga,
+                    'stok' => $product->stok,
+                    'category' => $product->category?->nama,
+                    'image' => $product->images->first()?->gambar ?? '/images/product-placeholder.jpg',
                 ];
             });
 
         // Ambil event mendatang (3 event)
-        $events = Event::where('date', '>=', now())
-            ->orderBy('date', 'asc')
+        $events = Event::with(['eventMedias'])
+            ->withCount('registrations') // supaya registered_participants efisien
+            ->upcoming()
+            ->orderBy('tanggal_mulai', 'asc')
             ->take(3)
             ->get()
             ->map(function ($event) {
                 return [
                     'id' => $event->id,
-                    'title' => $event->title,
-                    'description' => $event->description,
-                    'date' => $event->date,
-                    'time' => $event->time,
-                    'location' => $event->location,
-                    'image' => $event->image ? asset('storage/' . $event->image) : '/images/event-placeholder.jpg',
-                    'max_participants' => $event->max_participants,
-                    'current_participants' => $event->current_participants,
+                    'nama' => $event->nama,
+                    'deskripsi' => $event->deskripsi,
+                    'lokasi' => $event->lokasi,
+                    'tanggal_mulai' => $event->tanggal_mulai->format('d M Y H:i'),
+                    'tanggal_selesai' => $event->tanggal_selesai->format('d M Y H:i'),
+
+                    'max_pendaftar' => $event->max_pendaftar,
+
+                    // INI DARI RELASI (BENAR)
+                    'registered_participants' => $event->registered_participants,
+
+                    'image' => $event->eventMedias->first()?->file_path ?? '/images/event-placeholder.jpg',
                 ];
             });
 
         // Ambil artikel terbaru (3 artikel)
-        $articles = Article::where('is_published', true)
-            ->latest('published_at')
+        $articles = Article::with(['user', 'articleMedias'])
+            ->latest()
             ->take(3)
             ->get()
             ->map(function ($article) {
                 return [
                     'id' => $article->id,
-                    'title' => $article->title,
-                    'excerpt' => $article->excerpt,
-                    'content' => substr(strip_tags($article->content), 0, 150) . '...',
-                    'image' => $article->image ? asset('storage/' . $article->image) : '/images/article-placeholder.jpg',
-                    'published_at' => $article->published_at?->format('d M Y'),
-                    'author' => $article->author?->name ?? 'Admin',
+                    'judul' => $article->judul,
+
+                    // ringkasan dari isi
+                    'excerpt' => \Illuminate\Support\Str::limit(
+                        strip_tags($article->isi),
+                        150
+                    ),
+
+                    'author' => $article->user?->name ?? 'Admin',
+
+                    'image' => $article->articleMedias->first()
+                        ? asset('storage/' . $article->articleMedias->first()->path)
+                        : '/images/article-placeholder.jpg',
                 ];
             });
 
