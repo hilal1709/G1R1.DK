@@ -21,6 +21,9 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('auth/register');
     })->name('register');
 
+    Route::middleware('guest')->post('/register', [RegisteredUserController::class, 'store'])
+    ->name('register');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
