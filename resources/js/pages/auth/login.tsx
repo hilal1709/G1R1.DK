@@ -65,7 +65,7 @@ export default function Login({ canResetPassword, status }: LoginProps) {
                             >
                                 <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center">
                                     <img
-                                    src="/images/giri-dk-logo-o.png"
+                                    src="/images/giri-dk-logo-o.PNG"
                                     alt="Damar Kurung Logo"
                                     className="w-full h-full object-contain"
                                     />
