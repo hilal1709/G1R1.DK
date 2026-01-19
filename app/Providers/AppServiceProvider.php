@@ -31,5 +31,8 @@ class AppServiceProvider extends ServiceProvider
         //Route::bind('product', function ($value) {
       //     return Product::where('slug', $value)->firstOrFail();
        // });
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

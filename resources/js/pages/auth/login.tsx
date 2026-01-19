@@ -63,8 +63,12 @@ export default function Login({ canResetPassword, status }: LoginProps) {
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                             >
-                                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                                    <span className="text-white font-bold text-xl">DK</span>
+                                <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center">
+                                    <img
+                                    src="/images/giri dk logo o.png"
+                                    alt="Damar Kurung Logo"
+                                    className="w-full h-full object-contain"
+                                    />
                                 </div>
                                 <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
                                     Damar Kurung

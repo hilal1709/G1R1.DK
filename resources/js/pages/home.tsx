@@ -108,8 +108,12 @@ export default function Home({ products, events, articles }: HomeProps) {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-3"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">DK</span>
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src="/images/giri dk logo o.png"
+                  alt="Damar Kurung Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span
                 className={`text-xl font-bold transition-colors ${
@@ -789,8 +793,12 @@ export default function Home({ products, events, articles }: HomeProps) {
             {/* Company Info */}
             <div className="col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">DK</span>
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center">
+                  <img
+                    src="/images/giri dk logo o.png"
+                    alt="Damar Kurung Logo"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-2xl font-bold">Damar Kurung Gresik</span>
               </div>
