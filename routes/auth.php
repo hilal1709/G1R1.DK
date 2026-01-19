@@ -22,7 +22,7 @@ Route::middleware('guest')->group(function () {
     })->name('register');
 
     Route::middleware('guest')->post('/register', [RegisteredUserController::class, 'store'])
-    ->name('register');
+    ->name('register.create');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
