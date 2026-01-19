@@ -124,6 +124,7 @@ export default function EventsIndex({ events, filters }: Props) {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">Cari Event</h2>
+              {auth?.user?.role === 'admin' && (
               <Link
                 href="/events/create"
                 className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
@@ -131,6 +132,7 @@ export default function EventsIndex({ events, filters }: Props) {
                 <Plus className="w-5 h-5" />
                 Buat Event Baru
               </Link>
+              )}
             </div>
             <form onSubmit={handleSearch} className="flex gap-4">
               <input
@@ -174,7 +176,7 @@ export default function EventsIndex({ events, filters }: Props) {
                     className="relative"
                   >
                     {/* Admin Action Buttons */}
-                    {auth?.user && (
+                    {auth?.user?.role === 'admin' && (
                       <div className="absolute top-2 right-2 z-10 flex gap-2">
                         <Link
                           href={`/events/${event.id}/edit`}

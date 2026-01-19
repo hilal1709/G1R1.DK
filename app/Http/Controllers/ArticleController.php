@@ -30,7 +30,7 @@ class ArticleController extends Controller
         $request->validate([
             'judul' => 'required|string|max:200',
             'isi' => 'nullable|string',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov', // validasi file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,webp', // validasi file
             //'jenis.*' => 'required|string',
         ]);
 

@@ -4,6 +4,7 @@ import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
 import { usePage } from '@inertiajs/react';
+import { MessageCircle, ShoppingBag } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -13,7 +14,7 @@ interface Product {
   stok: number;
   sku: string;
 
-  shopee_link: string | null;
+  shopeelink: string | null;
   category: {
     nama: string;
   };
@@ -71,8 +72,8 @@ export default function ProductShow({ product, relatedProducts }: Props) {
   };
 
   const handleShopeeOrder = () => {
-    if (product.shopee_link) {
-      window.open(product.shopee_link, '_blank');
+    if (product.shopeelink) {
+      window.open(product.shopeelink, '_blank');
     }
   };
 
@@ -246,6 +247,7 @@ export default function ProductShow({ product, relatedProducts }: Props) {
 
               {/* Buttons */}
               <div className="space-y-3 mb-6">
+                {/* nanti dulu keranjang 
                 <button
                   onClick={() => {
                     router.post('/cart', { product_id: product.id, quantity }, {
@@ -261,7 +263,9 @@ export default function ProductShow({ product, relatedProducts }: Props) {
                   </svg>
                   {product.stok > 0 ? 'Tambah ke Keranjang' : 'Stok Habis'}
                 </button>
-
+                */}
+                
+                
                 <button
                   onClick={handleWhatsAppOrder}
                   disabled={product.stok === 0}
@@ -273,17 +277,16 @@ export default function ProductShow({ product, relatedProducts }: Props) {
                   Pesan via WhatsApp
                 </button>
 
-                {product.shopee_link && (
+                {product.shopeelink && (
                   <button
-                    onClick={handleShopeeOrder}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all"
-                  >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M7.03 11.42L7 11.38c-.03-.14-.03-.27-.03-.41a4.34 4.34 0 014.34-4.34h.02c.42 0 .82.08 1.2.22l-.46-.46a.75.75 0 111.06-1.06l1.77 1.77a.75.75 0 010 1.06L13.13 10a.75.75 0 01-1.06-1.06l.46-.46a2.84 2.84 0 00-1.2-.22h-.02A2.84 2.84 0 008.47 11c0 .14 0 .27.03.41l.04.04z"/>
-                    </svg>
-                    Beli di Shopee
-                  </button>
-                )}
+                      onClick={handleShopeeOrder}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all"
+                      title="Beli di Shopee"
+                    >
+                      <ShoppingBag className="w-6 h-6" />
+                      <span>Beli di Shopee</span>
+                    </button>
+                  )}
               </div>
 
               {/* Share */}

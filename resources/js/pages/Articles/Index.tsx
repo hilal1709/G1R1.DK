@@ -39,9 +39,14 @@ interface PageProps {
         per_page: number;
         total: number;
     };
+    auth?: {
+        user?: {
+            role?: string;
+        };
+    };
 }
 
-export default function ArticlesIndex({ articles }: PageProps) {
+export default function ArticlesIndex({ articles, auth  }: PageProps) {
     const [searchQuery, setSearchQuery] = useState('');
     
     const handleDelete = (id: number) => {
@@ -87,6 +92,8 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                     Tambah, edit, dan hapus artikel Damar Kurung
                                 </motion.p>
                             </div>
+                            {auth?.user?.role === 'admin' && (
+                            <>
                             <Link
                                 href="/articles/create"
                                 className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
@@ -94,6 +101,8 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                 <Plus className="h-5 w-5" />
                                 Tambah Artikel
                             </Link>
+                            </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -193,6 +202,8 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                             <Eye className="h-4 w-4" />
                                             Lihat
                                         </Link>
+                                        {auth?.user?.role === 'admin' && (
+                                        <>
                                         <Link
                                             href={`/articles/${article.id}/edit`}
                                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-semibold"
@@ -208,6 +219,8 @@ export default function ArticlesIndex({ articles }: PageProps) {
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
+                                        </>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>

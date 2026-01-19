@@ -77,10 +77,30 @@ export default function Home({ products, events, articles }: HomeProps) {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
+  const [scrolled, setScrolled] = useState(false)
+  !scrolled && "bg-gradient-to-b from-black/40 to-transparent"
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 80)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500
+          ${scrolled
+            ? "bg-white/90 backdrop-blur-md shadow-sm"
+            : "bg-transparent"
+          }
+        `}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <motion.div
@@ -91,22 +111,78 @@ export default function Home({ products, events, articles }: HomeProps) {
               <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">DK</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+              <span
+                className={`text-xl font-bold transition-colors ${
+                  scrolled
+                    ? "bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"
+                    : "text-white"
+                }`}
+              >
                 Damar Kurung
               </span>
             </motion.div>
 
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#beranda" className="text-gray-700 hover:text-amber-600 transition-colors">Beranda</a>
-              <a href="#tentang" className="text-gray-700 hover:text-amber-600 transition-colors">Tentang</a>
-              <a href="#produk" className="text-gray-700 hover:text-amber-600 transition-colors">Produk</a>
-              <a href="#event" className="text-gray-700 hover:text-amber-600 transition-colors">Event</a>
+              <a
+                href="#beranda"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
+              >
+                Beranda
+              </a>
+              <a
+                href="#tentang"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
+              >
+                Tentang
+              </a>
+              <a
+                href="#produk"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
+              >
+                Produk
+              </a>
+              <a
+                href="#event"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
+              >
+                Event
+              </a>
+              <a
+                href="#artikel"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
+              >
+                Artikel
+              </a>
             </div>
 
             <div className="flex items-center space-x-4">
               <Link
                 href="/login"
-                className="text-gray-700 hover:text-amber-600 transition-colors"
+                className={`transition-colors ${
+                  scrolled
+                    ? "text-gray-700 hover:text-amber-600"
+                    : "text-white hover:text-amber-400"
+                }`}
               >
                 Masuk
               </Link>
@@ -285,7 +361,7 @@ export default function Home({ products, events, articles }: HomeProps) {
             >
               <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="/images/workshop.jpg"
+                  src="/images/profile.jpg"
                   alt="Workshop"
                   className="w-full h-full object-cover"
                 />
@@ -368,7 +444,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 <div className="aspect-video bg-gray-900 relative group">
                   <iframe
                     className="w-full h-full"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    src="https://www.youtube.com/embed/xLIGnDM785s"
                     title="Video Profil Damar Kurung"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -386,7 +462,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 <div className="aspect-video bg-gray-900 relative group">
                   <iframe
                     className="w-full h-full"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    src="https://www.youtube.com/embed/lwTiPHIGIws"
                     title="Sejarah Damar Kurung"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -401,7 +477,7 @@ export default function Home({ products, events, articles }: HomeProps) {
             </motion.div>
           </div>
 
-          {/* Video Edukasi Section */}
+          {/* Video Edukasi Section 
           <div className="mt-16">
             <motion.h3
               initial={{ opacity: 0, y: 20 }}
@@ -442,10 +518,10 @@ export default function Home({ products, events, articles }: HomeProps) {
                 </motion.div>
               ))}
             </div>
-          </div>
+          </div>*/}
         </div>
       </section>
-
+            
       {/* Profile Produk Section */}
       <section id="produk" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -489,7 +565,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                     <p className="text-gray-600 mb-4 line-clamp-2">{product.deskripsi}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold text-amber-600">
-                        Rp {product.harga.toLocaleString('id-ID')}
+                          Rp {Number(product.harga).toLocaleString('id-ID')}
                       </span>
                       <Link
                         href={`/products/${product.id}`}
@@ -518,9 +594,10 @@ export default function Home({ products, events, articles }: HomeProps) {
           </div>
         </div>
       </section>
+          
 
-      {/* Mitra & Sertifikasi Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Artikel Section */}
+      <section id="artikel" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -529,66 +606,78 @@ export default function Home({ products, events, articles }: HomeProps) {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Mitra & <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Sertifikasi</span>
+              Artikel <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Terbaru</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Dipercaya oleh berbagai instansi dan telah tersertifikasi
+              Bacaan menarik seputar Damar Kurung, budaya, dan kegiatan kreatif
             </p>
           </motion.div>
 
-          {/* Mitra */}
-          <div className="mb-16">
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Mitra Perusahaan</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {articles && articles.length > 0 ? (
+              articles.map((article, index) => (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center aspect-square"
-                >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 font-semibold">Mitra {i}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sertifikasi */}
-          <div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">Sertifikasi Perusahaan</h3>
-            <div className="grid md:grid-cols-4 gap-8">
-              {[
-                { title: "Sertifikat PIRT", desc: "Produksi Pangan Industri Rumah Tangga" },
-                { title: "Halal MUI", desc: "Sertifikasi Halal dari MUI" },
-                { title: "ISO 9001", desc: "Standar Kualitas Internasional" },
-                { title: "SNI", desc: "Standar Nasional Indonesia" }
-              ].map((cert, index) => (
-                <motion.div
-                  key={index}
+                  key={article.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all text-center"
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group h-full flex flex-col"
                 >
-                  <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
+                    <img
+                      src={article.image}
+                      alt={article.judul}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/article-placeholder.jpg';
+                      }}
+                    />
                   </div>
-                  <h4 className="font-bold text-lg text-gray-900 mb-2">{cert.title}</h4>
-                  <p className="text-gray-600 text-sm">{cert.desc}</p>
+
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                      {article.judul}
+                    </h3>
+
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {article.excerpt}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-auto">
+                      <span className="text-sm text-gray-500">
+                        ✍️ {article.author}
+                      </span>
+
+                      <Link
+                        href={`/articles/${article.id}`}
+                        className="text-amber-600 font-semibold hover:text-orange-600 transition-colors"
+                      >
+                        Baca Selengkapnya →
+                      </Link>
+                    </div>
+                  </div>
+
                 </motion.div>
-              ))}
-            </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <p className="text-gray-500 text-lg">Belum ada artikel tersedia</p>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/articles"
+              className="inline-block bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-xl hover:scale-105 transition-all"
+            >
+              Lihat Semua Artikel →
+            </Link>
           </div>
         </div>
       </section>
+
 
       {/* Event Section */}
       <section id="event" className="py-20 bg-white">
@@ -691,6 +780,8 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
       </section>
 
+      
+
       {/* Footer */}
       <footer className="bg-gray-900 text-white pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -739,6 +830,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 <li><a href="#tentang" className="text-gray-400 hover:text-amber-500 transition-colors">Tentang Kami</a></li>
                 <li><a href="#produk" className="text-gray-400 hover:text-amber-500 transition-colors">Produk</a></li>
                 <li><a href="#event" className="text-gray-400 hover:text-amber-500 transition-colors">Event</a></li>
+                <li><a href="#artikel" className="text-gray-400 hover:text-amber-500 transition-colors">Artikel</a></li>
               </ul>
             </div>
 

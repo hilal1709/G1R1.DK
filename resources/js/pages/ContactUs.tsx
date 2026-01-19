@@ -298,16 +298,20 @@ export default function ContactUs() {
             transition={{ delay: 0.3 }}
             className="mt-12 bg-white rounded-2xl overflow-hidden shadow-lg"
           >
-            <div className="aspect-video bg-gray-200 flex items-center justify-center">
-              <div className="text-center">
-                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <p className="text-gray-500">Google Maps embed area</p>
-              </div>
+            <div className="aspect-video w-full">
+              <iframe
+                title="Lokasi Usman Sadar"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3958.631789919417!2d112.65078907492202!3d-7.162896174330165!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7f6c4851c8f4d%3A0x2f87e5bfc3d43eb0!2sJl.%20Usman%20Sadar%20Gg.%20XVII%20No.15%2C%20Gresik%2C%20Jawa%20Timur%2061119%2C%20Indonesia!5e0!3m2!1sen!2sid!4v1705600000000!5m2!1sen!2sid"
+                width="100%"
+                height="100%"
+                className="border-0"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
             </div>
           </motion.div>
+
         </div>
       </div>
     </>

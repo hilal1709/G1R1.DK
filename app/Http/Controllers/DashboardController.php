@@ -35,8 +35,8 @@ class DashboardController extends Controller
                     'author' => $article->user?->name ?? 'Admin',
                     
                     'image' => $article->articleMedias->first()
-                        ? asset($article->articleMedias->first()->file_path)
-                        : '/images/article-placeholder.jpg',
+                        ? $article->articleMedias->first()->file_path
+                        : null,
                     'date' => $article->created_at->diffForHumans(),
                 ];
             });
@@ -57,8 +57,8 @@ class DashboardController extends Controller
                     'registered_participants' => $event->registered_participants,
                     'max_pendaftar' => $event->max_pendaftar,
                     'image' => $event->eventMedias->first()
-                        ? asset( $event->eventMedias->first()->file_path)
-                        : '/images/event-placeholder.jpg',
+                        ? $event->eventMedias->first()->file_path
+                        : null,
                 ];
             });
 
@@ -76,7 +76,7 @@ class DashboardController extends Controller
                     'stok' => $product->stok,
                     'image' => $product->images->first()
                     ? asset($product->images->first()->gambar)
-                    : '/images/product-placeholder.jpg',
+                    : null,
                 ];
             });
 

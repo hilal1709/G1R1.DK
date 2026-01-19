@@ -26,7 +26,7 @@ class HomeController extends Controller
                     'harga' => $product->harga,
                     'stok' => $product->stok,
                     'category' => $product->category?->nama,
-                    'image' => $product->images->first()?->gambar ?? '/images/product-placeholder.jpg',
+                    'image' => $product->images->first()?->gambar ?? null,
                 ];
             });
 
@@ -51,9 +51,10 @@ class HomeController extends Controller
                     // INI DARI RELASI (BENAR)
                     'registered_participants' => $event->registered_participants,
 
-                    'image' => $event->eventMedias->first()?->file_path ?? '/images/event-placeholder.jpg',
+                    'image' => $event->eventMedias->first()?->file_path ?? null,
                 ];
             });
+            
 
         // Ambil artikel terbaru (3 artikel)
         $articles = Article::with(['user', 'articleMedias'])
@@ -74,8 +75,8 @@ class HomeController extends Controller
                     'author' => $article->user?->name ?? 'Admin',
 
                     'image' => $article->articleMedias->first()
-                        ? asset('storage/' . $article->articleMedias->first()->path)
-                        : '/images/article-placeholder.jpg',
+                        ? asset( $article->articleMedias->first()->file_path)
+                        : null,
                 ];
             });
 
