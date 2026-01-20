@@ -21,10 +21,10 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('auth/register');
     })->name('register');
 
-    Route::middleware('auth','role:admin' )->group(function() {
+    
         Route::middleware('guest')->post('/register', [RegisteredUserController::class, 'store'])
         ->name('register.create');
-    });
+    
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
