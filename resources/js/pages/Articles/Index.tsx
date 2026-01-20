@@ -245,15 +245,7 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                     ? 'Artikel yang Anda cari tidak ditemukan'
                                     : 'Mulai tambahkan artikel pertama Anda'}
                             </p>
-                            {!searchQuery && (
-                                <Link
-                                    href="/articles/create"
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
-                                >
-                                    <Plus className="h-5 w-5" />
-                                    Tambah Artikel
-                                </Link>
-                            )}
+                            
                         </motion.div>
                     )}
 
