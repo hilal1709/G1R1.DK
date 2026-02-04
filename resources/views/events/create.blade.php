@@ -1,4 +1,3 @@
-
 <h1>Buat Event Baru</h1>
 
 @if ($errors->any())
@@ -25,8 +24,13 @@
     </div>
 
     <div>
-        <label>Tanggal:</label><br>
-        <input type="datetime-local" name="tanggal" value="{{ old('tanggal') }}">
+        <label>Tanggal Mulai:</label><br>
+        <input type="datetime-local" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}">
+    </div>
+
+    <div>
+        <label>Tanggal Selesai:</label><br>
+        <input type="datetime-local" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}">
     </div>
 
     <div>
@@ -34,12 +38,24 @@
         <textarea name="deskripsi" rows="4">{{ old('deskripsi') }}</textarea>
     </div>
 
-    <div>
-        <label>Upload Media:</label><br>
-        <input type="file" name="files[]" multiple>
-        <p>File: jpg, jpeg, png, mp4, mov</p>
+    <h3>Upload Media</h3>
+    <div id="media-container">
+        <div class="media-item">
+            <input type="file" name="files[]">
+        </div>
     </div>
+
+    <button type="button" onclick="addMedia()">Tambah Foto / Video</button><br><br>
 
     <button type="submit">Buat Event</button>
 </form>
 
+<script>
+function addMedia() {
+    const container = document.getElementById('media-container');
+    const div = document.createElement('div');
+    div.classList.add('media-item');
+    div.innerHTML = `<input type="file" name="files[]">`;
+    container.appendChild(div);
+}
+</script>

@@ -3,28 +3,17 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
-import { ShoppingCart, Search, Filter, ChevronDown, MessageCircle, ShoppingBag } from 'lucide-react';
-import { formatQuickOrderMessage, openWhatsApp, openShopee, formatRupiah } from '@/lib/constants';
-
-interface ProductImage {
-  id: number;
-  path: string;
-}
-
-interface Category {
-  id: number;
-  nama: string;
-}
+import { MessageCircle, ShoppingBag } from 'lucide-react';
 
 interface Product {
   id: number;
-  nama: string;
-  deskripsi: string;
+  nama: string; // sebelumnya 'name' -> ganti ke 'nama'
+  deskripsi: string; // sebelumnya 'short_description'
   harga: number;
   stok: number;
-  shopee_link?: string | null;
-  category?: Category;
-  images?: ProductImage[];
+  shopeelink?: string | null;
+  images: { gambar: string }[]; // array of ProductImage
+  category: { nama: string }; // relasi category
 }
 
 interface Props {
@@ -33,49 +22,51 @@ interface Props {
   filters?: {
     search?: string;
     category?: string;
-    min_price?: string;
-    max_price?: string;
+    min_harga?: number;
+    max_harga?: number;
     sort?: string;
   };
+  categories: {
+  id: number;
+  nama: string;
+}[];
   auth?: {
     user?: {
-      name: string;
-      email: string;
-      role: string;
+      role?: string;
     };
   };
 }
 
-export default function ProductsIndex({ products, filters, categories, auth }: Props) {
-  console.log('Received props:', { products, filters, categories, auth });
+export default function ProductsIndex({ 
+  products, 
+  filters = {}, 
+  categories = [],
+  auth
+}: Props) {
 
-  // Laravel pagination structure: { data: [], links: [], current_page, last_page, etc. }
-  const safeProducts = {
-    data: Array.isArray(products?.data) ? products.data : [],
-    current_page: products?.current_page ?? 1,
-    last_page: products?.last_page ?? 1,
-    per_page: products?.per_page ?? 12,
-    total: products?.total ?? 0,
-    links: Array.isArray(products?.links) ? products.links : []
-  };
-  const safeCategories = Array.isArray(categories) ? categories : [];
-  const safeFilters = typeof filters === 'object' && filters !== null && !Array.isArray(filters) ? filters : {};
+  const { data = [], meta = { total: 0 } } = products || {};
 
-  console.log('Safe data:', { safeProducts, safeCategories, safeFilters });
+  // Pastikan filters tidak null/undefined sebelum dipakai
+  const safeFilters = filters || {};
 
-  const [searchQuery, setSearchQuery] = useState(safeFilters.search ?? '');
-  const [selectedCategory, setSelectedCategory] = useState(safeFilters.category ?? '');
-  const [minPrice, setMinPrice] = useState(safeFilters.min_price ?? '');
-  const [maxPrice, setMaxPrice] = useState(safeFilters.max_price ?? '');
-  const [sortBy, setSortBy] = useState(safeFilters.sort ?? 'latest');
-  const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState(safeFilters.search || '');
+  const [minHarga, setMinHarga] = useState(safeFilters.min_harga || '');
+  const [maxHarga, setMaxHarga] = useState(safeFilters.max_harga || '');
+  const [selectedCategory, setSelectedCategory] = useState(safeFilters.category || '');
+
+  // PERBAIKAN UTAMA DI SINI:
+  // Kita cek: apakah 'sort' itu benar-benar STRING?
+  // Jika filters berupa array [], filters.sort adalah function, ini yang bikin error.
+  const [sortBy, setSortBy] = useState(
+    typeof safeFilters.sort === 'string' ? safeFilters.sort : 'latest'
+  );
 
   const handleFilter = () => {
     router.get('/products', {
       search: searchQuery,
       category: selectedCategory,
-      min_price: minPrice,
-      max_price: maxPrice,
+      min_harga: minHarga,
+      max_harga: maxHarga,
       sort: sortBy,
     }, {
       preserveState: true,
@@ -86,26 +77,44 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
   const handleReset = () => {
     setSearchQuery('');
     setSelectedCategory('');
-    setMinPrice('');
-    setMaxPrice('');
+    setMinHarga('');
+    setMaxHarga('');
     setSortBy('latest');
     router.get('/products');
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (harga: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(price);
+    }).format(harga);
   };
 
   const getProductImage = (product: Product) => {
-    if (product.images && product.images.length > 0) {
-      return `/storage/${product.images[0].path}`;
-    }
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
-  };
+  if (product.images && product.images.length > 0) {
+    return product.images[0].gambar;
+  }
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%23ffffff'%3ENo Image%3C/text%3E%3C/svg%3E`;
+};
+
+const formatQuickOrderMessage = (product: Product) => {
+  return `Halo, saya tertarik dengan produk:
+${product.nama}
+Harga: ${formatPrice(product.harga)}`;
+};
+
+const openWhatsApp = (message: string) => {
+  const phone = '6285608767693'; // ganti nomor WA
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    '_blank'
+  );
+};
+
+const openShopee = (url: string) => {
+  window.open(url, '_blank');
+};
 
   return (
     <>
@@ -154,7 +163,7 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
                     placeholder="Nama produk..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   />
                 </div>
 
@@ -166,16 +175,18 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="">Semua Kategori</option>
-                    {safeCategories.map((cat) => (
-                      <option key={cat.id} value={cat.nama}>{cat.nama}</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.nama}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Price Range */}
+                {/* Harga Range */}
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Rentang Harga
@@ -183,17 +194,17 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
+                      value={minHarga}
+                      onChange={(e) => setMinHarga(e.target.value)}
                       placeholder="Min"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                      className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
                     <input
                       type="number"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
+                      value={maxHarga}
+                      onChange={(e) => setMaxHarga(e.target.value)}
                       placeholder="Max"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                      className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -206,7 +217,7 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="latest">Terbaru</option>
                     <option value="price_low">Harga: Rendah ke Tinggi</option>
@@ -237,7 +248,7 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
               {/* Results Info and Add Button */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-gray-600">
-                  Menampilkan {safeProducts.data.length} dari {safeProducts.total} produk
+                  Menampilkan {data.length} dari {meta.total} produk
                 </p>
                 {auth?.user?.role === 'admin' && (
                   <Link
@@ -253,17 +264,18 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
               </div>
 
               {/* Products */}
-              {safeProducts.data && safeProducts.data.length > 0 ? (
+              {products.data && products.data.length > 0 ? (
                 <>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {safeProducts.data.map((product: Product, index: number) => (
+                    {products.data.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group relative">
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group relative h-full flex flex-col">
+
                           {/* Admin Edit Button */}
                           {auth?.user?.role === 'admin' && (
                             <Link
@@ -274,6 +286,37 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </Link>
+                          )}
+                          {/* Admin Delete Button */}
+                          {auth?.user?.role === 'admin' && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                if (confirm(`Yakin mau hapus produk "${product.nama}"?`)) {
+                                  router.delete(`/products/${product.id}`, {
+                                    preserveScroll: true,
+                                  });
+                                }
+                              }}
+                              className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-red-500 text-gray-700 hover:text-white p-2 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                              title="Hapus Produk"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                                />
+                              </svg>
+                            </button>
                           )}
 
                           <Link href={`/products/${product.id}`}>
@@ -301,16 +344,18 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                             </div>
 
                             {/* Content */}
-                            <div className="p-5">
+                            <div className="p-5 flex flex-col flex-1">
                               {product.category && (
                                 <div className="text-xs text-amber-600 font-semibold mb-2">{product.category.nama}</div>
                               )}
-                              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                {product.nama}
-                              </h3>
-                              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                {product.deskripsi}
-                              </p>
+                              <div className="min-h-[88px]">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                                  {product.nama}
+                                </h3>
+                                <p className="text-gray-600 text-sm line-clamp-2">
+                                  {product.deskripsi}
+                                </p>
+                              </div>
 
                               {/* Price */}
                               <div className="mb-3">
@@ -323,7 +368,8 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                               </div>
 
                               {/* Quick Order Buttons */}
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 mt-auto">
+
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -339,12 +385,12 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                                   <MessageCircle className="w-4 h-4" />
                                   <span className="hidden sm:inline">WA</span>
                                 </button>
-                                {product.shopee_link && (
+                                {product.shopeelink && (
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      openShopee(product.shopee_link!);
+                                      openShopee(product.shopeelink!);
                                     }}
                                     className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
                                     title="Beli di Shopee"
@@ -362,7 +408,7 @@ export default function ProductsIndex({ products, filters, categories, auth }: P
                   </div>
 
                   {/* Pagination */}
-                  {safeProducts.last_page > 1 && (
+                  {products?.meta?.last_page > 1 &&  (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
                         {safeProducts.links.map((link, index: number) => (

@@ -19,6 +19,7 @@
                     <source src="{{ $media->file_path }}">
                 </video>
             @endif
+         @endforeach
 
             <!-- Tombol edit & delete media -->
             <div>
@@ -31,7 +32,6 @@
                     <button type="submit" onclick="return confirm('Hapus event ini?')">Delete</button>
                 </form>
             </div>
-        @endforeach
-
+       
     </div>
 @endforeach

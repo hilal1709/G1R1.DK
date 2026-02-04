@@ -11,37 +11,52 @@ import {
 import { FormEventHandler, useState } from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
 
+
 export default function EventCreate() {
     const { data, setData, post, processing, errors } = useForm({
-        title: '',
-        description: '',
-        image: null as File | null,
-        location: '',
-        start_date: '',
-        end_date: '',
-        start_time: '',
-        end_time: '',
-        max_participants: '',
-        short_description: '',
+        nama: '',
+        deskripsi: '',
+        lokasi: '',
+        tanggal_mulai: '',
+        tanggal_selesai: '',
+        max_pendaftar: '',
+        files: [] as File[],
+
     });
 
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string[]>([]);
+
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
+        const selectedFiles = e.target.files;
+        if (!selectedFiles) return;
+
+        const newFiles = Array.from(selectedFiles);
+
+        // append files lama + baru
+        setData('files', [...data.files, ...newFiles]);
+
+        // append preview
+        const newPreviews = newFiles.map(file =>
+            URL.createObjectURL(file)
+        );
+        setImagePreview(prev => [...prev, ...newPreviews]);
+
+        // RESET input agar bisa pilih file lagi
+        e.target.value = '';
     };
+
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-        post('/events');
+        post('/events', {
+            forceFormData: true,
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setImagePreview(prev => prev.filter((_, i) => i !== index));
+        setData('files', data.files.filter((_, i) => i !== index));
     };
 
     return (
@@ -99,50 +114,74 @@ export default function EventCreate() {
                                         Gambar Event *
                                     </label>
                                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-400 transition-colors">
-                                        {imagePreview ? (
-                                            <div className="space-y-4">
-                                                <img
-                                                    src={imagePreview}
-                                                    alt="Preview"
-                                                    className="max-w-xs mx-auto rounded-lg shadow-lg"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setImagePreview(null);
-                                                        setData('image', null);
-                                                    }}
-                                                    className="text-red-500 hover:text-red-700 text-sm"
-                                                >
-                                                    Hapus Gambar
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
-                                                <div>
-                                                    <label htmlFor="image" className="cursor-pointer">
-                                                        <span className="text-amber-600 hover:text-amber-700 font-semibold">
-                                                            Upload gambar
-                                                        </span>
-                                                        <span className="text-gray-500"> atau drag and drop</span>
-                                                        <input
-                                                            id="image"
-                                                            type="file"
-                                                            accept="image/*"
-                                                            onChange={handleImageChange}
-                                                            className="hidden"
-                                                        />
-                                                    </label>
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        PNG, JPG, GIF hingga 10MB
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {errors.image && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.image}</p>
+    {imagePreview.length > 0 ? (
+        <>
+            {/* Preview Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {imagePreview.map((src, index) => (
+                    <div key={index} className="relative">
+                        <img
+                            src={src}
+                            className="h-32 w-full object-cover rounded-lg shadow"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            {/* TAMBAH GAMBAR LAGI */}
+            <label
+                htmlFor="image"
+                className="inline-block mt-4 cursor-pointer text-amber-600 font-semibold hover:underline"
+            >
+                + Tambah gambar lagi
+            </label>
+
+            {/* HAPUS SEMUA */}
+            <button
+                type="button"
+                onClick={() => {
+                    setImagePreview([]);
+                    setData('files', []);
+                }}
+                className="block mt-2 text-red-500 text-sm"
+            >
+                Hapus semua gambar
+            </button>
+        </>
+    ) : (
+        <>
+            <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
+            <label htmlFor="image" className="cursor-pointer">
+                <span className="text-amber-600 font-semibold">
+                    Upload gambar
+                </span>
+                <span className="text-gray-500"> atau drag & drop</span>
+            </label>
+            <p className="text-sm text-gray-500 mt-1">
+                PNG, JPG maksimal 10MB
+            </p>
+        </>
+    )}
+
+    {/* INPUT FILE (SELALU ADA) */}
+    <input
+        id="image"
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
+    />
+</div>
+                                    {errors.files && (
+                                        <p className="text-red-500 text-sm mt-2">{errors.files}</p>
                                     )}
                                 </motion.div>
 
@@ -159,14 +198,14 @@ export default function EventCreate() {
                                     </label>
                                     <input
                                         type="text"
-                                        value={data.title}
-                                        onChange={(e) => setData('title', e.target.value)}
+                                        value={data.nama}
+                                        onChange={(e) => setData('nama', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                                         placeholder="Masukkan nama event..."
                                         required
                                     />
-                                    {errors.title && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.title}</p>
+                                    {errors.nama && (
+                                        <p className="text-red-500 text-sm mt-2">{errors.nama}</p>
                                     )}
                                 </motion.div>
 
@@ -183,14 +222,14 @@ export default function EventCreate() {
                                     </label>
                                     <input
                                         type="text"
-                                        value={data.location}
-                                        onChange={(e) => setData('location', e.target.value)}
+                                        value={data.lokasi}
+                                        onChange={(e) => setData('lokasi', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                                         placeholder="Alamat lengkap lokasi event..."
                                         required
                                     />
-                                    {errors.location && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.location}</p>
+                                    {errors.lokasi && (
+                                        <p className="text-red-500 text-sm mt-2">{errors.lokasi}</p>
                                     )}
                                 </motion.div>
 
@@ -209,51 +248,27 @@ export default function EventCreate() {
                                         <div>
                                             <label className="text-xs text-gray-600 mb-1 block">Tanggal Mulai *</label>
                                             <input
-                                                type="date"
-                                                value={data.start_date}
-                                                onChange={(e) => setData('start_date', e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
+                                                type="datetime-local"
+                                                value={data.tanggal_mulai}
+                                                onChange={(e) => setData('tanggal_mulai', e.target.value)}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 "
                                                 required
                                             />
-                                            {errors.start_date && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
+                                            {errors.tanggal_mulai && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.tanggal_mulai}</p>
                                             )}
                                         </div>
+
                                         <div>
                                             <label className="text-xs text-gray-600 mb-1 block">Tanggal Selesai</label>
                                             <input
-                                                type="date"
-                                                value={data.end_date}
-                                                onChange={(e) => setData('end_date', e.target.value)}
+                                                type="datetime-local"
+                                                value={data.tanggal_selesai}
+                                                onChange={(e) => setData('tanggal_selesai', e.target.value)}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                                             />
-                                            {errors.end_date && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-600 mb-1 block">Waktu Mulai *</label>
-                                            <input
-                                                type="time"
-                                                value={data.start_time}
-                                                onChange={(e) => setData('start_time', e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
-                                                required
-                                            />
-                                            {errors.start_time && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.start_time}</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-600 mb-1 block">Waktu Selesai</label>
-                                            <input
-                                                type="time"
-                                                value={data.end_time}
-                                                onChange={(e) => setData('end_time', e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
-                                            />
-                                            {errors.end_time && (
-                                                <p className="text-red-500 text-xs mt-1">{errors.end_time}</p>
+                                            {errors.tanggal_selesai && (
+                                                <p className="text-red-500 text-xs mt-1">{errors.tanggal_selesai}</p>
                                             )}
                                         </div>
                                     </div>
@@ -272,41 +287,14 @@ export default function EventCreate() {
                                     </label>
                                     <input
                                         type="number"
-                                        value={data.max_participants}
-                                        onChange={(e) => setData('max_participants', e.target.value)}
+                                        value={data.max_pendaftar}
+                                        onChange={(e) => setData('max_pendaftar', e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900"
                                         placeholder="0 = tidak terbatas"
                                         min="0"
                                     />
-                                    {errors.max_participants && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.max_participants}</p>
-                                    )}
-                                </motion.div>
-
-                                {/* Short Description */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                    className="bg-white rounded-xl border border-amber-100 shadow-lg p-6"
-                                >
-                                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                        Deskripsi Singkat *
-                                    </label>
-                                    <textarea
-                                        value={data.short_description}
-                                        onChange={(e) => setData('short_description', e.target.value)}
-                                        rows={3}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none text-gray-900"
-                                        placeholder="Ringkasan singkat tentang event..."
-                                        required
-                                        maxLength={200}
-                                    />
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        {data.short_description.length}/200 karakter
-                                    </p>
-                                    {errors.short_description && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.short_description}</p>
+                                    {errors.max_pendaftar && (
+                                        <p className="text-red-500 text-sm mt-2">{errors.max_pendaftar}</p>
                                     )}
                                 </motion.div>
 
@@ -324,8 +312,8 @@ export default function EventCreate() {
                                         </span>
                                     </label>
                                     <textarea
-                                        value={data.description}
-                                        onChange={(e) => setData('description', e.target.value)}
+                                        value={data.deskripsi}
+                                        onChange={(e) => setData('deskripsi', e.target.value)}
                                         rows={12}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none text-gray-900"
                                         placeholder="Deskripsikan event secara detail (maksimal 2000 karakter)..."
@@ -333,10 +321,10 @@ export default function EventCreate() {
                                         maxLength={2000}
                                     />
                                     <p className="text-sm text-gray-500 mt-2">
-                                        {data.description.length}/2000 karakter
+                                        {data.deskripsi.length}/2000 karakter
                                     </p>
-                                    {errors.description && (
-                                        <p className="text-red-500 text-sm mt-2">{errors.description}</p>
+                                    {errors.deskripsi && (
+                                        <p className="text-red-500 text-sm mt-2">{errors.deskripsi}</p>
                                     )}
                                 </motion.div>
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -16,9 +17,14 @@ Route::middleware('guest')->group(function () {
         ]);
     })->name('login');
 
-    Route::get('register', function () {
-        return Inertia::render('auth/register');
-    })->name('register');
+    Route::middleware('auth','role:admin' )->group(function() {
+        Route::get('register', function () {
+            return Inertia::render('auth/register');
+        })->name('register');
+
+        Route::middleware('guest')->post('/register', [RegisteredUserController::class, 'store'])
+        ->name('register.create');
+    });
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
@@ -33,9 +39,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.store');
 
     // Social Authentication
-    Route::get('auth/google', [SocialAuthController::class, 'redirectToGoogle'])
-        ->name('auth.google');
+    Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 
-    Route::get('auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])
-        ->name('auth.google.callback');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 });

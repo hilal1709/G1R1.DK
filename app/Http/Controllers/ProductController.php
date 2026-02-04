@@ -33,72 +33,68 @@ class ProductController extends Controller
 
         // Filter by category
         if ($request->filled('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('nama', $request->category);
-            });
+            $query->where('category_id', $request->category);
         }
 
         // Filter by price range
-        if ($request->filled('min_price')) {
-            $query->where('harga', '>=', $request->min_price);
+        if ($request->filled('min_harga')) {
+            $query->where('harga', '>=', $request->min_harga);
         }
 
-        if ($request->filled('max_price')) {
-            $query->where('harga', '<=', $request->max_price);
+        if ($request->filled('max_harga')) {
+            $query->where('harga', '<=', $request->max_harga);
         }
 
         // Sort
         $sortBy = $request->get('sort', 'latest');
 
         switch ($sortBy) {
-            case 'price_low':
+            case 'harga_low':
                 $query->orderBy('harga', 'asc');
                 break;
-            case 'price_high':
+            case 'harga_high':
                 $query->orderBy('harga', 'desc');
                 break;
             default:
                 $query->latest();
         }
+        $categories = Category::select('id','nama')->get();
 
         $products = $query
             ->with(['category', 'images'])
             ->paginate(12)
             ->withQueryString();
 
-        $categories = Category::all();
-
         return Inertia::render('Products/Index', [
             'products' => $products,
+            'filters' => $request->only(['search', 'category', 'min_harga', 'max_harga', 'sort']),
             'categories' => $categories,
-            'filters' => $request->only(['search', 'category', 'min_price', 'max_price', 'sort']),
         ]);
     }
 
     // Tampilkan detail produk
     public function show(Product $product)
     {
-        // Load relasi category, images, reviews, dan comments
-        $product->load([
-            'category',
-            'images',
-            'reviews' => function ($query) {
-                $query->with(['user', 'images'])->latest();
-            },
-            'comments' => function ($query) {
-                $query->with('user')->latest();
-            }
-        ]);
+        // Load relasi category dan images
+        $product->load('category', 'images', 'reviews.user');
 
-        // Hitung average rating dan review count
-        $product->average_rating = $product->reviews->avg('rating') ?? 0;
-        $product->review_count = $product->reviews->count();
-
+        $relatedProducts = [];
+        if ($product->category) {
+            $relatedProducts = Product::with('images')
+                ->where('category_id', $product->category->id)
+                ->where('id', '!=', $product->id)
+                ->take(3)
+                ->get();
+        }
+        
         return Inertia::render('Products/Show', [
             'product' => $product,
-            'reviews' => $product->reviews,
-            'comments' => $product->comments,
+            'relatedProducts' => $relatedProducts,
         ]);
+        //return view('products.show', [
+          //  'product' => $product, // lempar satu produk
+        //]);
+
     }
 
     // Form tambah produk
@@ -106,6 +102,9 @@ class ProductController extends Controller
     {
         $this->forbidMember();
         $categories = Category::all();
+        //return view('products.create', [
+           // 'categories' => $categories
+        //]);
         return Inertia::render('Products/Create', [
             'categories' => $categories
         ]);
@@ -121,16 +120,8 @@ class ProductController extends Controller
             'deskripsi' => 'nullable|string',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
-            'shopee_link' => 'nullable|url',
-            'images' => 'required|array|min:3',
-            'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048'
-        ], [
-            'images.required' => 'Gambar produk wajib diupload.',
-            'images.min' => 'Minimal 3 gambar produk harus diupload.',
-            'images.*.required' => 'Setiap file gambar harus valid.',
-            'images.*.image' => 'File harus berupa gambar.',
-            'images.*.mimes' => 'Format gambar harus JPEG, PNG, atau JPG.',
-            'images.*.max' => 'Ukuran gambar maksimal 2MB.',
+            'shopeelink' => 'nullable|url',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $this->forbidMember();
@@ -142,7 +133,7 @@ class ProductController extends Controller
             'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
-            'shopee_link' => $request->shopee_link,
+            'shopeelink' => $request->shopeelink,
         ]);
 
 
@@ -165,6 +156,11 @@ class ProductController extends Controller
         $this->forbidMember();
         $product->load('images');
         $categories = Category::all();
+        $product->load('images');
+        //return view('products.edit', [
+            //'product' => $product,
+            //'categories' => $categories
+        //]);
         return Inertia::render('Products/Edit', [
             'product' => $product,
             'categories' => $categories
@@ -174,6 +170,7 @@ class ProductController extends Controller
     // Update produk
     public function update(Request $request, Product $product)
     {
+        //dd($request->all(), $request->file('images'));
         $request->validate([
             'nama' => 'required|string|max:200',
             'sku' => 'required|string|max:100|unique:products,sku,' . $product->id,
@@ -181,13 +178,13 @@ class ProductController extends Controller
             'deskripsi' => 'nullable|string',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
-            'shopee_link' => 'nullable|url',
+            'shopeelink' => 'nullable|url',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $this->forbidMember();
 
-        $product->update($request->only('nama','sku','category_id','deskripsi','harga','stok','shopee_link'));
+        $product->update($request->only('nama','sku','category_id','deskripsi','harga','stok','shopeelink'));
 
         // Replace gambar lama jika ada file baru
         if($request->has('replace_images')) {

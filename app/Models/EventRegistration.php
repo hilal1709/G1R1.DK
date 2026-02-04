@@ -9,11 +9,7 @@ class EventRegistration extends Model
     protected $fillable = [
         'event_id',
         'user_id',
-        'registered_at',
-    ];
-
-    protected $casts = [
-        'registered_at' => 'datetime',
+        
     ];
 
     public function event()

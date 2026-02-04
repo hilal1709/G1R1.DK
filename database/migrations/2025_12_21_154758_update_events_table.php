@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('max_pendaftar')->default(0)->after('deskripsi');
 
             // Menambah kolom 'status'
-            $table->string('status', 50)->default('active')->after('max_pendaftar');
+            $table->string('status', 50)->default('upcoming')->after('max_pendaftar');
 
             // Mengubah kolom 'tanggal' menjadi 'tanggal_mulai'
             $table->renameColumn('tanggal', 'tanggal_mulai');

@@ -26,6 +26,8 @@ class Event extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
+    protected $appends = ['registered_participants'];
+
     /**
      * Relasi ke user (penyelenggara/event creator)
      */
@@ -70,5 +72,11 @@ class Event extends Model
     public function scopeActive($query)
     {
         return $query->whereIn('status', ['upcoming', 'ongoing']);
+    }
+
+    public function getRegisteredParticipantsAttribute()
+    {
+        return $this->registrations_count
+            ?? $this->registrations()->count();
     }
 }

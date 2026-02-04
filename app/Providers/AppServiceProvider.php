@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use App\Models\Event;
 use App\Models\Product;
+use Illuminate\Support\Facades\URL;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,13 +25,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Route model binding untuk Event menggunakan slug
-        Route::bind('event', function ($value) {
-            return Event::where('slug', $value)->firstOrFail();
-        });
+        //Route::bind('event', function ($value) {
+       //     return Event::where('slug', $value)->firstOrFail();
+        //});
 
         // Route model binding untuk Product menggunakan slug
-        Route::bind('product', function ($value) {
-            return Product::where('slug', $value)->firstOrFail();
-        });
+        //Route::bind('product', function ($value) {
+      //     return Product::where('slug', $value)->firstOrFail();
+       // });
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

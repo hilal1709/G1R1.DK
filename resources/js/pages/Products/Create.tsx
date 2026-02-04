@@ -7,7 +7,7 @@ import {
     DollarSign,
     X,
 } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { FormEventHandler, useState, useEffect } from 'react';
 
 interface Category {
     id: number;
@@ -18,35 +18,61 @@ interface Props {
     categories: Category[];
 }
 
+
 export default function ProductCreate({ categories }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        nama: '',
-        sku: '',
-        category_id: '',
-        deskripsi: '',
-        harga: '',
-        stok: '',
-        shopee_link: '',
-        images: [] as File[],
+    nama: '',
+    sku: '',
+    category_id: '',
+    deskripsi: '',
+    harga: '',
+    stok: '',
+    shopeelink: '',
+    images: [] as File[],
     });
 
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    useEffect(() => {
+        return () => {
+            imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [imagePreviews]);
 
+    // Multi-image preview dengan Promise.all supaya urutannya aman
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            const newImages = [...data.images, ...files];
-            setData('images', newImages);
+        const selectedFiles = e.target.files;
+        if (!selectedFiles) return;
 
-            // Create previews
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setImagePreviews(prev => [...prev, reader.result as string]);
-                };
-                reader.readAsDataURL(file);
-            });
+        const newFiles = Array.from(selectedFiles);
+
+        // Validasi ukuran (maks 10MB)
+        const validFiles = newFiles.filter(file => file.size <= 10 * 1024 * 1024);
+        if (validFiles.length < newFiles.length) {
+            alert("Beberapa file diabaikan karena ukurannya lebih dari 10MB");
         }
+
+        // Tambahkan file baru tanpa hapus file lama
+        setData('images', [...data.images, ...newFiles]);
+
+        // Buat preview baru dan gabungkan dengan yang lama
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+
+        e.target.value = ''; // supaya bisa pilih file sama lagi
+    };
+
+    const removeImage = (index: number) => {
+        // Hapus dari data dan preview
+        setData('images', data.images.filter((_, i) => i !== index));
+        const removedPreview = imagePreviews[index];
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        URL.revokeObjectURL(removedPreview); // bersihkan memory
+    };
+
+    const removeAllImages = () => {
+        imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        setImagePreviews([]);
+        setData('images', []);
     };
 
     const removeImage = (index: number) => {
@@ -126,101 +152,89 @@ export default function ProductCreate({ categories }: Props) {
                         className="bg-white rounded-2xl shadow-xl p-8"
                     >
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Image Upload */}
+                            {/* Images */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Gambar Produk <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex items-center justify-between mb-4">
-                                    <p className="text-sm text-gray-600">
-                                        Upload minimal <span className="font-bold text-amber-600">3 gambar</span> produk
-                                    </p>
-                                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                                        data.images.length >= 3
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-red-100 text-red-700'
-                                    }`}>
-                                        {data.images.length} / 3 gambar
-                                    </span>
-                                </div>
-                                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                                    data.images.length >= 3
-                                        ? 'border-green-300 bg-green-50 hover:border-green-400'
-                                        : 'border-gray-300 hover:border-amber-400'
-                                }`}>
-                                    {imagePreviews.length > 0 ? (
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-3 gap-4">
-                                                {imagePreviews.map((preview, index) => (
-                                                    <div key={index} className="relative">
-                                                        <img
-                                                            src={preview}
-                                                            alt={`Preview ${index + 1}`}
-                                                            className="w-full h-32 object-cover rounded-lg shadow-lg"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeImage(index)}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <label htmlFor="images" className="cursor-pointer inline-block">
-                                                <span className="text-amber-600 hover:text-amber-700 font-semibold">
-                                                    + Tambah Gambar Lagi
-                                                </span>
-                                                <input
-                                                    id="images"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    multiple
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
-                                                />
-                                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-4">
+                                Gambar Produk <span className="text-red-500">*</span>
+                            </label>
+
+                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-amber-400 transition-colors relative">
+
+                                {/* INPUT FILE SELALU ADA */}
+                                <input
+                                id="images"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageChange}
+                                className="hidden"
+                                />
+
+                                {imagePreviews.length > 0 ? (
+                                <>
+                                    {/* PREVIEW */}
+                                    <div className="grid grid-cols-4 gap-4">
+                                    {imagePreviews.map((src, i) => (
+                                        <div key={i} className="relative">
+                                        <img
+                                            src={src}
+                                            alt={`Preview ${i}`}
+                                            className="w-full h-24 object-cover rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(i)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
+                                            aria-label={`Hapus gambar ${i + 1}`}
+                                        >
+                                            ✕
+                                        </button>
                                         </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
-                                            <div>
-                                                <label htmlFor="images" className="cursor-pointer">
-                                                    <span className="text-amber-600 hover:text-amber-700 font-semibold">
-                                                        Upload gambar
-                                                    </span>
-                                                    <span className="text-gray-500"> atau drag and drop</span>
-                                                    <input
-                                                        id="images"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        multiple
-                                                        onChange={handleImageChange}
-                                                        className="hidden"
-                                                    />
-                                                </label>
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    PNG, JPG hingga 2MB per file • <span className="font-semibold text-amber-600">Minimal 3 gambar</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                {data.images.length > 0 && data.images.length < 3 && (
-                                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
-                                        <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        <p className="text-sm text-amber-800">
-                                            Anda perlu menambahkan <span className="font-bold">{3 - data.images.length} gambar lagi</span> untuk memenuhi minimal 3 gambar.
-                                        </p>
+                                    ))}
                                     </div>
-                                )}
-                                {errors.images && (
-                                    <p className="text-red-500 text-sm mt-2">{errors.images}</p>
+
+                                    {/* HAPUS SEMUA */}
+                                    <button
+                                    type="button"
+                                    onClick={removeAllImages}
+                                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-semibold"
+                                    >
+                                    Hapus Semua
+                                    </button>
+
+                                    {/* TAMBAH GAMBAR */}
+                                    <label
+                                    htmlFor="images"
+                                    className="block mt-6 cursor-pointer text-amber-600 font-semibold hover:text-amber-700"
+                                    >
+                                    + Tambah gambar
+                                    </label>
+                                </>
+                                ) : (
+                                <div className="space-y-4">
+                                    <ImageIcon className="w-16 h-16 text-gray-400 mx-auto" />
+                                    <div>
+                                    <label htmlFor="images" className="cursor-pointer">
+                                        <span className="text-amber-600 hover:text-amber-700 font-semibold">
+                                        Upload gambar
+                                        </span>{' '}
+                                        <span className="text-gray-500">atau drag and drop</span>
+                                    </label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        PNG, JPG, GIF hingga 10MB
+                                    </p>
+                                    </div>
+                                </div>
                                 )}
                             </div>
+
+                            {errors.images && (
+                                <p className="text-red-500 text-sm mt-2">{errors.images}</p>
+                            )}
+                            </div>
+
+
+
 
                             {/* Basic Info */}
                             <div className="grid md:grid-cols-2 gap-6">
@@ -230,10 +244,10 @@ export default function ProductCreate({ categories }: Props) {
                                     </label>
                                     <input
                                         type="text"
-                                        id="nama"
+                                        id="name"
                                         value={data.nama}
                                         onChange={(e) => setData('nama', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="Masukkan nama produk"
                                         required
                                     />
@@ -243,47 +257,43 @@ export default function ProductCreate({ categories }: Props) {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="sku" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        SKU <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="sku"
-                                        value={data.sku}
-                                        onChange={(e) => setData('sku', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                        placeholder="Contoh: DK-001"
-                                        required
-                                    />
-                                    {errors.sku && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.sku}</p>
-                                    )}
+                                <label htmlFor="sku" className="block text-sm font-semibold text-gray-700 mb-2">SKU <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    placeholder="Masukkan SKU"
+                                    required
+                                />
+                                {errors.sku && <p className="text-red-500 text-sm mt-1">{errors.sku}</p>}
                                 </div>
                             </div>
 
                             {/* Category */}
                             <div>
-                                <label htmlFor="category_id" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Kategori <span className="text-red-500">*</span>
-                                </label>
+                                <label htmlFor="category_id" className="block text-sm font-semibold text-gray-700 mb-2">Kategori <span className="text-red-500">*</span></label>
                                 <select
-                                    id="category_id"
-                                    value={data.category_id}
-                                    onChange={(e) => setData('category_id', e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                    required
+                                id="category_id"
+                                className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                value={data.category_id}
+                                onChange={(e) => setData('category_id', e.target.value)}
+                                required
                                 >
-                                    <option value="">Pilih Kategori</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.nama}</option>
-                                    ))}
-                                </select>
-                                {errors.category_id && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>
+                                <option value="">Pilih Kategori</option>
+                                {categories?.length ? (
+                                    categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.nama}</option>
+                                    ))
+                                ) : (
+                                    <option disabled>Belum ada kategori</option>
                                 )}
+                                </select>
+                                {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
                             </div>
 
-                            {/* Price and Stock */}
+                            {/* harga and Stock */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
                                     <label htmlFor="harga" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -296,7 +306,7 @@ export default function ProductCreate({ categories }: Props) {
                                             id="harga"
                                             value={data.harga}
                                             onChange={(e) => setData('harga', e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                             placeholder="0"
                                             min="0"
                                             step="1000"
@@ -314,10 +324,10 @@ export default function ProductCreate({ categories }: Props) {
                                     </label>
                                     <input
                                         type="number"
-                                        id="stok"
+                                        id="stock"
                                         value={data.stok}
                                         onChange={(e) => setData('stok', e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="0"
                                         min="0"
                                         required
@@ -328,23 +338,7 @@ export default function ProductCreate({ categories }: Props) {
                                 </div>
                             </div>
 
-                            {/* Shopee Link */}
-                            <div>
-                                <label htmlFor="shopee_link" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Link Shopee (Opsional)
-                                </label>
-                                <input
-                                    type="url"
-                                    id="shopee_link"
-                                    value={data.shopee_link}
-                                    onChange={(e) => setData('shopee_link', e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                    placeholder="https://shopee.co.id/..."
-                                />
-                                {errors.shopee_link && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.shopee_link}</p>
-                                )}
-                            </div>
+
 
                             {/* Description */}
                             <div>
@@ -352,16 +346,30 @@ export default function ProductCreate({ categories }: Props) {
                                     Deskripsi Produk
                                 </label>
                                 <textarea
-                                    id="deskripsi"
+                                    id="description"
                                     value={data.deskripsi}
                                     onChange={(e) => setData('deskripsi', e.target.value)}
                                     rows={8}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                                     placeholder="Deskripsikan produk secara detail..."
                                 />
                                 {errors.deskripsi && (
                                     <p className="text-red-500 text-sm mt-1">{errors.deskripsi}</p>
                                 )}
+                            </div>
+
+                            {/* Shopee Link */}
+                            <div>
+                                <label htmlFor="shopeelink" className="block text-sm font-semibold text-gray-700 mb-2">Link Shopee</label>
+                                <input
+                                type="text"
+                                id="shopeelink"
+                                value={data.shopeelink}
+                                onChange={(e) => setData('shopeelink', e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                placeholder="https://shopee.co.id/..."
+                                />
+                                {errors.shopeelink && <p className="text-red-500 text-sm mt-1">{errors.shopeelink}</p>}
                             </div>
 
                             {/* Actions */}
