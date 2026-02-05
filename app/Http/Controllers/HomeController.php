@@ -54,7 +54,7 @@ class HomeController extends Controller
                     'image' => $event->eventMedias->first()?->file_path ?? null,
                 ];
             });
-            
+
 
         // Ambil artikel terbaru (3 artikel)
         $articles = Article::with(['user', 'articleMedias'])

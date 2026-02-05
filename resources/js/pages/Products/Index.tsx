@@ -4,6 +4,8 @@ import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
 import { MessageCircle, ShoppingBag } from 'lucide-react';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Product {
   id: number;
@@ -17,9 +19,21 @@ interface Product {
 }
 
 interface Props {
-  products?: any; // Laravel pagination object
-  categories?: Category[];
-  filters?: {
+  products: {
+    data: Product[];
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+    meta: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+    };
+  };
+  filters: {
     search?: string;
     category?: string;
     min_harga?: number;
@@ -37,9 +51,9 @@ interface Props {
   };
 }
 
-export default function ProductsIndex({ 
-  products, 
-  filters = {}, 
+export default function ProductsIndex({
+  products,
+  filters = {},
   categories = [],
   auth
 }: Props) {
@@ -63,7 +77,7 @@ export default function ProductsIndex({
 
   const handleFilter = () => {
     router.get('/products', {
-      search: searchQuery,
+      search,
       category: selectedCategory,
       min_harga: minHarga,
       max_harga: maxHarga,
@@ -75,7 +89,7 @@ export default function ProductsIndex({
   };
 
   const handleReset = () => {
-    setSearchQuery('');
+    setSearch('');
     setSelectedCategory('');
     setMinHarga('');
     setMaxHarga('');
@@ -124,28 +138,19 @@ const openShopee = (url: string) => {
         <PublicNavbar activeMenu="/products" />
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-bold mb-4"
-            >
-              Katalog Produk
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-white/90"
-            >
-              Temukan Damar Kurung terbaik untuk kebutuhan Anda
-            </motion.p>
-          </div>
-        </div>
+        <TraditionalHeader
+          title="Katalog Produk"
+          subtitle="Temukan Damar Kurung terbaik untuk kebutuhan Anda"
+          variant="primary"
+        />
 
-        {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Background with Batik Pattern */}
+        <div className="relative min-h-screen">
+          <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+            <BatikPattern />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Sidebar Filter */}
             <div className="lg:col-span-1">
@@ -159,9 +164,8 @@ const openShopee = (url: string) => {
                   </label>
                   <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     placeholder="Nama produk..."
                     className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   />
@@ -222,6 +226,8 @@ const openShopee = (url: string) => {
                     <option value="latest">Terbaru</option>
                     <option value="price_low">Harga: Rendah ke Tinggi</option>
                     <option value="price_high">Harga: Tinggi ke Rendah</option>
+                    <option value="popular">Paling Populer</option>
+                    <option value="rating">Rating Tertinggi</option>
                   </select>
                 </div>
 
@@ -411,7 +417,7 @@ const openShopee = (url: string) => {
                   {products?.meta?.last_page > 1 &&  (
                     <div className="mt-12 flex justify-center">
                       <div className="flex gap-2">
-                        {safeProducts.links.map((link, index: number) => (
+                        {products.links.map((link, index: number) => (
                           <button
                             key={index}
                             onClick={() => link.url && router.get(link.url)}
@@ -448,6 +454,7 @@ const openShopee = (url: string) => {
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>

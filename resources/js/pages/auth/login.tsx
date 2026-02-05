@@ -257,21 +257,6 @@ export default function Login({ canResetPassword, status }: LoginProps) {
 
                         </form>
 
-                        {/* Login dengan Google */}
-                        <div className="mt-6 flex flex-col items-center gap-3">
-                            <a
-                                href="/auth/google"
-                                className="w-full flex items-center justify-center gap-3 py-3.5 border border-gray-300 rounded-xl shadow-sm text-gray-700 font-medium hover:bg-gray-100 transition-all"
-                            >
-                                <img
-                                    src="https://www.google.com/favicon.ico"
-                                    alt="Google Logo"
-                                    className="w-5 h-5"
-                                />
-                                Masuk dengan Google
-                            </a>
-                        </div>
-
                         {/* Register Link */}
                         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
                             <p className="text-sm text-gray-600">

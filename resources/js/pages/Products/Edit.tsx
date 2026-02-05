@@ -4,20 +4,12 @@ import {
     Save,
     ArrowLeft,
     Image as ImageIcon,
-    X,
-    Trash2,
+    DollarSign,
 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
-
-interface ProductImage {
-    id: number;
-    gambar: string;
-}
-
-interface Category {
-    id: number;
-    nama: string;
-}
+import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Product {
     id: number;
@@ -82,7 +74,7 @@ export default function ProductEdit({ product,categories  }: PageProps) {
 
     const handleSubmit: FormEventHandler = e => {
         e.preventDefault();
-        post(route('products.update', product.id));
+        post(`/products/${product.id}`);
     };
 
 
@@ -91,51 +83,32 @@ export default function ProductEdit({ product,categories  }: PageProps) {
             <Head title={`Edit Produk - ${product.nama}`} />
 
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-                {/* Navigation */}
-                <nav className="bg-white shadow-sm sticky top-0 z-50">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center h-16">
-                            <Link href="/dashboard" className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                                    <span className="text-white font-bold text-xl">DK</span>
-                                </div>
-                                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                                    Damar Kurung
-                                </span>
-                            </Link>
+                <PublicNavbar activeMenu="/products" />
 
-                            <div className="flex items-center space-x-6">
-                                <Link href="/dashboard" className="text-gray-700 hover:text-amber-600">Dashboard</Link>
-                                <Link href="/products" className="text-gray-700 hover:text-amber-600">Produk</Link>
-                                <Link href="/events" className="text-gray-700 hover:text-amber-600">Event</Link>
-                                <Link href="/articles" className="text-gray-700 hover:text-amber-600">Artikel</Link>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl md:text-5xl font-bold mb-4"
-                        >
-                            Edit Produk
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-xl text-white/90"
-                        >
-                            Update informasi produk {product.nama}
-                        </motion.p>
-                    </div>
+                {/* Batik Pattern Overlay */}
+                <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+                    <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
                 </div>
 
+                {/* Header */}
+                <TraditionalHeader
+                    title="Edit Produk"
+                    subtitle="Perbarui informasi produk Damar Kurung"
+                    variant="primary"
+                >
+                    <div className="flex justify-center mt-4">
+                        <Link
+                            href="/products"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold border-2 border-white/20"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Kembali
+                        </Link>
+                    </div>
+                </TraditionalHeader>
+
                 {/* Form */}
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -143,41 +116,14 @@ export default function ProductEdit({ product,categories  }: PageProps) {
                         className="bg-white rounded-2xl shadow-xl p-8"
                     >
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Existing Images */}
-                            {existingImages.length > 0 && (
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-4">
-                                        Gambar Yang Ada
-                                    </label>
-                                    <div className="grid grid-cols-3 gap-4 mb-4">
-                                        {existingImages.map((image) => (
-                                            <div key={image.id} className="relative group">
-                                                <img
-                                                    src={image.gambar}
-                                                    alt="Existing"
-                                                    className="w-full h-32 object-cover rounded-lg shadow-lg"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => markImageForDeletion(image.id)}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Add New Images */}
+                            {/* Image Upload */}
                             <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-4">
                                 Gambar Produk
                             </label>
 
                             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-amber-400 transition-colors">
-                                
+
                                 {/* GAMBAR LAMA */}
                                     {existingImages.length > 0 && (
                                     <div className="grid grid-cols-4 gap-4 mb-4">
@@ -320,7 +266,7 @@ export default function ProductEdit({ product,categories  }: PageProps) {
                                         Harga <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-3 text-gray-500">Rp</span>
+                                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number"
                                             id="harga"
@@ -339,8 +285,8 @@ export default function ProductEdit({ product,categories  }: PageProps) {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="stok" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Stok <span className="text-red-500">*</span>
+                                    <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Stok
                                     </label>
                                     <input
                                         type="number"
@@ -350,7 +296,6 @@ export default function ProductEdit({ product,categories  }: PageProps) {
                                         className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="0"
                                         min="0"
-                                        required
                                     />
                                     {errors.stok && (
                                         <p className="text-red-500 text-sm mt-1">{errors.stok}</p>
@@ -371,6 +316,7 @@ export default function ProductEdit({ product,categories  }: PageProps) {
                                     rows={8}
                                     className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                                     placeholder="Deskripsikan produk secara detail..."
+                                    required
                                 />
                                 {errors.deskripsi && (
                                     <p className="text-red-500 text-sm mt-1">{errors.deskripsi}</p>

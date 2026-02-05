@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Article {
     id: number;
@@ -87,7 +89,7 @@ export default function ArticleEdit({ article }: PageProps) {
         }
     };
 
-    
+
 
     return (
         <>
@@ -96,39 +98,30 @@ export default function ArticleEdit({ article }: PageProps) {
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
                 <PublicNavbar activeMenu="/articles" />
 
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="text-4xl md:text-5xl font-bold mb-2"
-                                >
-                                    Edit Artikel
-                                </motion.h1>
-                                <motion.p
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="text-amber-100 text-lg"
-                                >
-                                    Perbarui artikel: {article.judul}
-                                </motion.p>
-                            </div>
-                            <Link
-                                href="/articles"
-                                className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
-                            >
-                                <ArrowLeft className="h-5 w-5" />
-                                Kembali
-                            </Link>
-                        </div>
-                    </div>
+                {/* Batik Pattern Overlay */}
+                <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+                    <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Header */}
+                <TraditionalHeader
+                    title="Edit Artikel"
+                    subtitle="Perbarui informasi artikel Damar Kurung"
+                    variant="primary"
+                >
+                    <div className="flex justify-center mt-4">
+                        <Link
+                            href="/articles"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold border-2 border-white/20"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Kembali
+                        </Link>
+                    </div>
+                </TraditionalHeader>
+
+                {/* Form */}
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <form onSubmit={handleSubmit}>
                         <div className="grid lg:grid-cols-3 gap-8">
                             {/* Main Content */}
@@ -190,7 +183,7 @@ export default function ArticleEdit({ article }: PageProps) {
                                     )}
                                 </motion.div>
 
-            
+
                             </div>
 
                             {/* Sidebar */}
@@ -298,7 +291,7 @@ export default function ArticleEdit({ article }: PageProps) {
                                     )}
                                 </motion.div>
 
-                                
+
 
                                 {/* Submit Button */}
                                 <motion.div

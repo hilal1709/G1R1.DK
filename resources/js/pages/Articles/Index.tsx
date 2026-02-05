@@ -14,10 +14,12 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Article {
     id: number;
-    judul: string;       // judul artikel
+    judul: string | null;       // judul artikel
     isi: string | null;  // isi artikel
     article_medias?: { file_path: string }[];
     user: { name: string } | null; // author
@@ -48,7 +50,7 @@ interface PageProps {
 
 export default function ArticlesIndex({ articles, auth  }: PageProps) {
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     const handleDelete = (id: number) => {
         if (
             confirm(
@@ -60,9 +62,9 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
     };
 
     const filteredArticles = articles.data.filter((article) =>
-        article.judul.toLowerCase().includes(searchQuery.toLowerCase()),
+        article.judul?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false,
     );
-    
+
 
     return (
         <>
@@ -70,44 +72,31 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
 
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
                 <PublicNavbar activeMenu="/articles" />
-            
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="text-4xl md:text-5xl font-bold mb-2"
-                                >
-                                    Kelola Artikel
-                                </motion.h1>
-                                <motion.p
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="text-amber-100 text-lg"
-                                >
-                                    Tambah, edit, dan hapus artikel Damar Kurung
-                                </motion.p>
-                            </div>
-                            {auth?.user?.role === 'admin' && (
-                            <>
-                            <Link
-                                href="/articles/create"
-                                className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
-                            >
-                                <Plus className="h-5 w-5" />
-                                Tambah Artikel
-                            </Link>
-                            </>
-                            )}
-                        </div>
-                    </div>
-                </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Header */}
+                <TraditionalHeader
+                    title="Kelola Artikel"
+                    subtitle="Tambah, edit, dan hapus artikel Damar Kurung"
+                    variant="primary"
+                >
+                    {auth?.user?.role === 'admin' && (
+                        <Link
+                            href="/articles/create"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
+                        >
+                            <Plus className="h-5 w-5" />
+                            Tambah Artikel
+                        </Link>
+                    )}
+                </TraditionalHeader>
+
+                {/* Background with Batik Pattern */}
+                <div className="relative min-h-screen">
+                    <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+                        <BatikPattern />
+                    </div>
+
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     {/* Search & Filter */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -156,8 +145,8 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                             <Tag className="h-16 w-16 text-amber-300" />
                                         </div>
                                     )}
-                                
-                                    
+
+
                                 </div>
 
                                 {/* Content */}
@@ -180,7 +169,7 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                                 {article.user.name}
                                             </div>
                                         )}
-                                    
+
                                         <div className="flex items-center gap-2 text-sm text-gray-500">
                                             <Calendar className="h-4 w-4" />
                                             {new Date(
@@ -245,7 +234,7 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                     ? 'Artikel yang Anda cari tidak ditemukan'
                                     : 'Mulai tambahkan artikel pertama Anda'}
                             </p>
-                            
+
                         </motion.div>
                     )}
 
@@ -273,6 +262,7 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                             ))}
                         </motion.div>
                     )}
+                    </div>
                 </div>
             </div>
         </>

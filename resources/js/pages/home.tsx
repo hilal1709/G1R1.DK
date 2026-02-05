@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@inertiajs/react';
+import BatikPattern from '@/components/BatikPattern';
 
 interface Product {
   id: number;
@@ -77,17 +78,30 @@ export default function Home({ products, events, articles }: HomeProps) {
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  const [scrolled, setScrolled] = useState(false)
-  !scrolled && "bg-gradient-to-b from-black/40 to-transparent"
+  const [scrolled, setScrolled] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const scrollPosition = window.scrollY > 80;
+    if (scrollPosition !== scrolled) {
+      setScrolled(scrollPosition);
+    }
+  }, [scrolled]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 80)
-    }
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [handleScroll]);
 
 
   return (
@@ -106,9 +120,9 @@ export default function Home({ products, events, articles }: HomeProps) {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-3"
+              className="flex items-center space-x-2 sm:space-x-3"
             >
-              <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex items-center justify-center">
                 <img
                   src="/images/giri-dk-logo-o.PNG"
                   alt="Damar Kurung Logo"
@@ -116,7 +130,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 />
               </div>
               <span
-                className={`text-xl font-bold transition-colors ${
+                className={`text-lg sm:text-xl font-bold transition-colors ${
                   scrolled
                     ? "bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"
                     : "text-white"
@@ -126,10 +140,10 @@ export default function Home({ products, events, articles }: HomeProps) {
               </span>
             </motion.div>
 
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-4 sm:space-x-6 lg:space-x-8">
               <a
                 href="#beranda"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -139,7 +153,7 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
               <a
                 href="#tentang"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -149,7 +163,7 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
               <a
                 href="#produk"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -159,7 +173,7 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
               <a
                 href="#event"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -169,7 +183,7 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
               <a
                 href="#artikel"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -179,10 +193,10 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <a
                 href="/login"
-                className={`transition-colors ${
+                className={`text-sm lg:text-base transition-colors ${
                   scrolled
                     ? "text-gray-700 hover:text-amber-600"
                     : "text-white hover:text-amber-400"
@@ -192,7 +206,7 @@ export default function Home({ products, events, articles }: HomeProps) {
               </a>
               <a
                 href="/register"
-                className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all"
+                className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-1.5 sm:px-6 sm:py-2 text-sm lg:text-base rounded-full hover:shadow-lg transition-all"
               >
                 Daftar
               </a>
@@ -215,14 +229,13 @@ export default function Home({ products, events, articles }: HomeProps) {
             className="absolute inset-0 flex items-center justify-center"
             style={{ pointerEvents: currentSlide === index ? 'auto' : 'none' }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent z-10" />
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `url(${slide.image})`,
-                filter: 'brightness(0.7)'
+                backgroundImage: `url(${slide.image})`
               }}
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
 
             <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
               <div className="max-w-3xl">
@@ -230,7 +243,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
                   transition={{ delay: 0.2 }}
-                  className="text-amber-400 font-semibold text-lg mb-4 tracking-wider"
+                  className="text-amber-400 font-semibold text-base sm:text-lg mb-3 sm:mb-4 tracking-wider"
                 >
                   {slide.subtitle}
                 </motion.p>
@@ -239,7 +252,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
                   transition={{ delay: 0.3 }}
-                  className="text-6xl md:text-7xl font-bold mb-6 leading-tight"
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight"
                 >
                   {slide.title}
                 </motion.h1>
@@ -248,7 +261,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
                   transition={{ delay: 0.4 }}
-                  className="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed"
+                  className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 mb-6 sm:mb-8 leading-relaxed"
                 >
                   {slide.description}
                 </motion.p>
@@ -257,17 +270,17 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
                   transition={{ delay: 0.5 }}
-                  className="flex gap-4"
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-4"
                 >
                   <Link
                     href={slide.ctaLink}
-                    className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+                    className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all text-center"
                   >
                     {slide.cta}
                   </Link>
                   <a
                     href="#tentang"
-                    className="bg-white/20 backdrop-blur-sm border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 transition-all"
+                    className="bg-white/20 backdrop-blur-sm border-2 border-white text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:bg-white/30 transition-all text-center"
                   >
                     Pelajari Lebih Lanjut
                   </a>
@@ -303,31 +316,31 @@ export default function Home({ products, events, articles }: HomeProps) {
       </section>
 
       {/* Company Profile Section */}
-      <section id="tentang" className="py-20 bg-white">
+      <section id="tentang" className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
               Profil <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Perusahaan</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               Melestarikan tradisi, mengembangkan inovasi, dan memanfaatkan teknologi untuk kemajuan UMKM
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
-              <h3 className="text-3xl font-bold text-gray-900">Tentang Kami</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">Tentang Kami</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 Damar Kurung Gresik adalah UMKM yang bergerak dalam bidang kerajinan lentera tradisional khas Gresik.
                 Kami telah berdiri sejak tahun 1995 dan terus berkembang hingga saat ini, memproduksi berbagai jenis
                 damar kurung dengan kualitas terbaik.
@@ -377,8 +390,13 @@ export default function Home({ products, events, articles }: HomeProps) {
       </section>
 
       {/* Sejarah Damar Kurung Section */}
-      <section id="sejarah" className="py-20 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="sejarah" className="relative py-20 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        {/* Batik Pattern Overlay */}
+        <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+          <BatikPattern />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -481,7 +499,7 @@ export default function Home({ products, events, articles }: HomeProps) {
             </motion.div>
           </div>
 
-          {/* Video Edukasi Section 
+          {/* Video Edukasi Section
           <div className="mt-16">
             <motion.h3
               initial={{ opacity: 0, y: 20 }}
@@ -525,10 +543,15 @@ export default function Home({ products, events, articles }: HomeProps) {
           </div>*/}
         </div>
       </section>
-            
+
       {/* Profile Produk Section */}
-      <section id="produk" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="produk" className="relative py-20 bg-white">
+        {/* Batik Pattern Overlay */}
+        <div className="absolute inset-0 text-amber-900 opacity-[0.02]">
+          <BatikPattern />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -598,11 +621,16 @@ export default function Home({ products, events, articles }: HomeProps) {
           </div>
         </div>
       </section>
-          
+
 
       {/* Artikel Section */}
-      <section id="artikel" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="artikel" className="relative py-20 bg-gray-50">
+        {/* Batik Pattern Overlay */}
+        <div className="absolute inset-0 text-amber-900 opacity-[0.02]">
+          <BatikPattern />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -684,8 +712,13 @@ export default function Home({ products, events, articles }: HomeProps) {
 
 
       {/* Event Section */}
-      <section id="event" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="event" className="relative py-20 bg-white">
+        {/* Batik Pattern Overlay */}
+        <div className="absolute inset-0 text-amber-900 opacity-[0.02]">
+          <BatikPattern />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -784,7 +817,7 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
       </section>
 
-      
+
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white pt-16 pb-8">

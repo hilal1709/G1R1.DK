@@ -5,9 +5,11 @@ import {
     ArrowLeft,
     Image as ImageIcon,
     DollarSign,
-    X,
 } from 'lucide-react';
 import { FormEventHandler, useState, useEffect } from 'react';
+import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Category {
     id: number;
@@ -75,23 +77,9 @@ export default function ProductCreate({ categories }: Props) {
         setData('images', []);
     };
 
-    const removeImage = (index: number) => {
-        const newImages = data.images.filter((_, i) => i !== index);
-        const newPreviews = imagePreviews.filter((_, i) => i !== index);
-        setData('images', newImages);
-        setImagePreviews(newPreviews);
-    };
-
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-
-        // Validasi minimal 3 gambar
-        if (data.images.length < 3) {
-            alert('Minimal 3 gambar produk harus diupload!');
-            return;
-        }
-
-        post(route('products.store'));
+        post('/products');
     };
 
     return (
@@ -99,52 +87,32 @@ export default function ProductCreate({ categories }: Props) {
             <Head title="Tambah Produk Baru" />
 
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-                {/* Navigation */}
-                <nav className="bg-white shadow-sm sticky top-0 z-50">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center h-16">
-                            <Link href="/dashboard" className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                                    <span className="text-white font-bold text-xl">DK</span>
-                                </div>
-                                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                                    Damar Kurung
-                                </span>
-                            </Link>
+                <PublicNavbar activeMenu="/products" />
 
-                            <div className="flex items-center space-x-6">
-                                <Link href="/dashboard" className="text-gray-700 hover:text-amber-600">Dashboard</Link>
-                                <Link href="/products" className="text-gray-700 hover:text-amber-600">Produk</Link>
-                                <Link href="/events" className="text-gray-700 hover:text-amber-600">Event</Link>
-                                <Link href="/articles" className="text-gray-700 hover:text-amber-600">Artikel</Link>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl md:text-5xl font-bold mb-4"
-                        >
-                            Tambah Produk Baru
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-xl text-white/90"
-                        >
-                            Tambahkan produk Damar Kurung baru ke katalog
-                        </motion.p>
-                    </div>
+                {/* Batik Pattern Overlay */}
+                <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+                    <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
                 </div>
 
+                {/* Header */}
+                <TraditionalHeader
+                    title="Tambah Produk Baru"
+                    subtitle="Tambahkan produk Damar Kurung ke katalog"
+                    variant="primary"
+                >
+                    <div className="flex justify-center mt-4">
+                        <Link
+                            href="/products"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold border-2 border-white/20"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Kembali
+                        </Link>
+                    </div>
+                </TraditionalHeader>
+
                 {/* Form */}
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -239,7 +207,7 @@ export default function ProductCreate({ categories }: Props) {
                             {/* Basic Info */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="nama" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
                                         Nama Produk <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -300,7 +268,7 @@ export default function ProductCreate({ categories }: Props) {
                                         Harga <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-3 text-gray-500">Rp</span>
+                                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number"
                                             id="harga"
@@ -319,8 +287,8 @@ export default function ProductCreate({ categories }: Props) {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="stok" className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Stok <span className="text-red-500">*</span>
+                                    <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Stok
                                     </label>
                                     <input
                                         type="number"
@@ -330,7 +298,6 @@ export default function ProductCreate({ categories }: Props) {
                                         className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         placeholder="0"
                                         min="0"
-                                        required
                                     />
                                     {errors.stok && (
                                         <p className="text-red-500 text-sm mt-1">{errors.stok}</p>
@@ -342,8 +309,8 @@ export default function ProductCreate({ categories }: Props) {
 
                             {/* Description */}
                             <div>
-                                <label htmlFor="deskripsi" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Deskripsi Produk
+                                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Deskripsi Lengkap <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
                                     id="description"
@@ -352,6 +319,7 @@ export default function ProductCreate({ categories }: Props) {
                                     rows={8}
                                     className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                                     placeholder="Deskripsikan produk secara detail..."
+                                    required
                                 />
                                 {errors.deskripsi && (
                                     <p className="text-red-500 text-sm mt-1">{errors.deskripsi}</p>
@@ -383,11 +351,11 @@ export default function ProductCreate({ categories }: Props) {
                                 </Link>
                                 <button
                                     type="submit"
-                                    disabled={processing || data.images.length < 3}
+                                    disabled={processing}
                                     className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Save className="w-5 h-5" />
-                                    {processing ? 'Menyimpan...' : data.images.length < 3 ? `Minimal 3 Gambar (${data.images.length}/3)` : 'Simpan Produk'}
+                                    {processing ? 'Menyimpan...' : 'Simpan Produk'}
                                 </button>
                             </div>
                         </form>

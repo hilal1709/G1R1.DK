@@ -3,12 +3,57 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import { PageProps } from '@/types';
+import { Paintbrush, Droplet } from 'lucide-react';
+import TraditionalHeader from '@/components/TraditionalHeader';
+import BatikPattern from '@/components/BatikPattern';
 
-export default function GameMewarnai() {
+interface GameDesign {
+    id: number;
+    nama: string;
+    level: 'mudah' | 'sedang' | 'sulit';
+    deskripsi: string;
+    path_data: any[];
+    thumbnail: string | null;
+    is_active: boolean;
+}
+
+interface Props extends PageProps {
+    designs: GameDesign[];
+}
+
+export default function GameMewarnai({ auth, designs = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentColor, setCurrentColor] = useState('#FF6B00');
   const [brushSize, setBrushSize] = useState(10);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<'mudah' | 'sedang' | 'sulit'>('mudah');
+  const [selectedDesign, setSelectedDesign] = useState<GameDesign | null>(null);
+  const [tool, setTool] = useState<'brush' | 'bucket'>('brush');
+
+  const isAdmin = auth?.user?.role === 'admin';
+
+  const levels = [
+    { id: 'mudah', name: 'Mudah', description: 'Desain sederhana untuk pemula' },
+    { id: 'sedang', name: 'Sedang', description: 'Desain dengan detail menengah' },
+    { id: 'sulit', name: 'Sulit', description: 'Desain kompleks dengan banyak detail' },
+  ];
+
+  // Get designs for selected level
+  const levelDesigns = designs.filter(d => d.level === selectedLevel);
+
+  useEffect(() => {
+    // Auto select first design when level changes
+    if (levelDesigns.length > 0 && !selectedDesign) {
+      setSelectedDesign(levelDesigns[0]);
+    } else if (levelDesigns.length > 0 && selectedDesign) {
+      // Check if current design is still in the level
+      const stillInLevel = levelDesigns.find(d => d.id === selectedDesign.id);
+      if (!stillInLevel) {
+        setSelectedDesign(levelDesigns[0]);
+      }
+    }
+  }, [selectedLevel, levelDesigns]);
 
   const colors = [
     { name: 'Orange', value: '#FF6B00' },
@@ -34,90 +79,126 @@ export default function GameMewarnai() {
     canvas.width = 800;
     canvas.height = 600;
 
-    // Draw Damar Kurung outline
-    drawDamarKurungOutline(ctx);
-  }, []);
+    // Draw design from database
+    drawDesignOutline(ctx);
+  }, [selectedDesign]);
 
-  const drawDamarKurungOutline = (ctx: CanvasRenderingContext2D) => {
+  const drawDesignOutline = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+    if (!selectedDesign || !selectedDesign.path_data) {
+      // Fallback: draw simple placeholder if no design selected
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(200, 150, 400, 300);
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#666';
+      ctx.textAlign = 'center';
+      ctx.fillText('Belum ada desain tersedia', 400, 300);
+      return;
+    }
+
+    // Draw paths from database
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 3;
 
-    // Damar Kurung traditional pattern outline
-    // Main frame (lantern shape)
-    ctx.beginPath();
-    ctx.moveTo(400, 50);
-    ctx.lineTo(500, 150);
-    ctx.lineTo(500, 450);
-    ctx.lineTo(400, 550);
-    ctx.lineTo(300, 450);
-    ctx.lineTo(300, 150);
-    ctx.closePath();
-    ctx.stroke();
+    selectedDesign.path_data.forEach((path: any[]) => {
+      if (!Array.isArray(path) || path.length < 2) return;
 
-    // Top decoration
-    ctx.beginPath();
-    ctx.arc(400, 50, 30, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Inner decorative lines
-    for (let i = 0; i < 4; i++) {
-      const y = 150 + (i * 75);
       ctx.beginPath();
-      ctx.moveTo(300, y);
-      ctx.lineTo(500, y);
-      ctx.stroke();
-    }
+      ctx.moveTo(path[0].x, path[0].y);
 
-    // Vertical lines
-    ctx.beginPath();
-    ctx.moveTo(350, 150);
-    ctx.lineTo(350, 450);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(450, 150);
-    ctx.lineTo(450, 450);
-    ctx.stroke();
-
-    // Decorative patterns
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        const x = 325 + (j * 75);
-        const y = 187.5 + (i * 75);
-
-        ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Small flower pattern
-        for (let k = 0; k < 4; k++) {
-          const angle = (k * Math.PI) / 2;
-          const px = x + Math.cos(angle) * 10;
-          const py = y + Math.sin(angle) * 10;
-          ctx.beginPath();
-          ctx.arc(px, py, 5, 0, Math.PI * 2);
-          ctx.stroke();
-        }
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
       }
+
+      ctx.stroke();
+    });
+  };
+
+  const floodFill = (startX: number, startY: number, fillColor: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+
+    // Get starting pixel color
+    const startPos = (startY * canvas.width + startX) * 4;
+    const startR = pixels[startPos];
+    const startG = pixels[startPos + 1];
+    const startB = pixels[startPos + 2];
+    const startA = pixels[startPos + 3];
+
+    // Convert fill color to RGB
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCtx.fillStyle = fillColor;
+    tempCtx.fillRect(0, 0, 1, 1);
+    const fillData = tempCtx.getImageData(0, 0, 1, 1).data;
+    const fillR = fillData[0];
+    const fillG = fillData[1];
+    const fillB = fillData[2];
+
+    // Don't fill if colors are the same
+    if (startR === fillR && startG === fillG && startB === fillB) return;
+
+    // Flood fill algorithm using stack
+    const pixelStack: Array<[number, number]> = [[startX, startY]];
+    const visited = new Set<string>();
+
+    while (pixelStack.length > 0) {
+      const [x, y] = pixelStack.pop()!;
+      const key = `${x},${y}`;
+
+      if (visited.has(key)) continue;
+      if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+
+      const pos = (y * canvas.width + x) * 4;
+      const r = pixels[pos];
+      const g = pixels[pos + 1];
+      const b = pixels[pos + 2];
+      const a = pixels[pos + 3];
+
+      // Check if pixel matches start color
+      if (r !== startR || g !== startG || b !== startB || a !== startA) continue;
+
+      visited.add(key);
+
+      // Fill pixel
+      pixels[pos] = fillR;
+      pixels[pos + 1] = fillG;
+      pixels[pos + 2] = fillB;
+      pixels[pos + 3] = 255;
+
+      // Add adjacent pixels
+      pixelStack.push([x + 1, y]);
+      pixelStack.push([x - 1, y]);
+      pixelStack.push([x, y + 1]);
+      pixelStack.push([x, y - 1]);
     }
 
-    // Bottom handle
-    ctx.beginPath();
-    ctx.moveTo(400, 550);
-    ctx.lineTo(400, 580);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(400, 580, 10, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.putImageData(imageData, 0, 0);
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    draw(e);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(e.clientX - rect.left);
+    const y = Math.floor(e.clientY - rect.top);
+
+    if (tool === 'bucket') {
+      floodFill(x, y, currentColor);
+    } else {
+      setIsDrawing(true);
+      draw(e);
+    }
   };
 
   const stopDrawing = () => {
@@ -126,6 +207,7 @@ export default function GameMewarnai() {
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing && e.type !== 'mousedown') return;
+    if (tool !== 'brush') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -150,7 +232,7 @@ export default function GameMewarnai() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    drawDamarKurungOutline(ctx);
+    drawDesignOutline(ctx);
   };
 
   const downloadImage = () => {
@@ -171,28 +253,20 @@ export default function GameMewarnai() {
         <PublicNavbar activeMenu="/games" />
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-12 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-bold mb-4"
-            >
-              🎨 Game Mewarnai Damar Kurung
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-white/90"
-            >
-              Warnai Damar Kurung dengan kreativitas Anda!
-            </motion.p>
-          </div>
-        </div>
+        <TraditionalHeader
+          title="Game Mewarnai Damar Kurung"
+          subtitle="Warnai Damar Kurung dengan kreativitas Anda!"
+          variant="primary"
+        />
 
-        {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Background with Batik Pattern */}
+        <div className="relative min-h-screen">
+          <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+            <BatikPattern />
+          </div>
+
+          {/* Content */}
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Tools Panel */}
             <div className="lg:col-span-1">
@@ -203,9 +277,118 @@ export default function GameMewarnai() {
               >
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Alat Mewarnai</h2>
 
+                {/* Level Selection */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Pilih Level</h3>
+                  <div className="space-y-2">
+                    {levels.map((level) => (
+                      <button
+                        key={level.id}
+                        onClick={() => setSelectedLevel(level.id as 'mudah' | 'sedang' | 'sulit')}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                          selectedLevel === level.id
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <div className="font-bold">{level.name}</div>
+                        <div className={`text-xs ${selectedLevel === level.id ? 'text-white/90' : 'text-gray-500'}`}>
+                          {level.description}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Design Selection */}
+                {levelDesigns.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-700">Pilih Desain</h3>
+                      {isAdmin && (
+                        <Link
+                          href="/game-designs/create"
+                          className="text-xs text-orange-600 hover:text-orange-800 font-semibold"
+                        >
+                          + Tambah
+                        </Link>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {levelDesigns.map((design) => (
+                        <button
+                          key={design.id}
+                          onClick={() => setSelectedDesign(design)}
+                          className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                            selectedDesign?.id === design.id
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <div className="font-medium">{design.nama}</div>
+                          {design.deskripsi && (
+                            <div className={`text-xs ${selectedDesign?.id === design.id ? 'text-white/90' : 'text-gray-500'}`}>
+                              {design.deskripsi}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {levelDesigns.length === 0 && (
+                  <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800 mb-2">
+                      Belum ada desain untuk level ini.
+                    </p>
+                    {isAdmin && (
+                      <Link
+                        href="/game-designs/create"
+                        className="inline-block mt-2 text-sm font-semibold text-orange-600 hover:text-orange-800 underline"
+                      >
+                        Tambah Desain Baru
+                      </Link>
+                    )}
+                  </div>
+                )}
+
+                {/* Tool Selection */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Pilih Alat</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setTool('brush')}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${
+                        tool === 'brush'
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Paintbrush className={`h-6 w-6 mb-2 ${
+                        tool === 'brush' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                      <span className="text-xs font-semibold">Kuas</span>
+                    </button>
+                    <button
+                      onClick={() => setTool('bucket')}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${
+                        tool === 'bucket'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Droplet className={`h-6 w-6 mb-2 ${
+                        tool === 'bucket' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                      <span className="text-xs font-semibold">Isi Area</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Color Palette */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Pilih Warna</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Pilih Warna</h3>
                   <div className="grid grid-cols-5 gap-2">
                     {colors.map((color) => (
                       <button
@@ -236,20 +419,22 @@ export default function GameMewarnai() {
                   </div>
                 </div>
 
-                {/* Brush Size */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ukuran Kuas: {brushSize}px
-                  </label>
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
+                {/* Brush Size - only show for brush tool */}
+                {tool === 'brush' && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Ukuran Kuas: {brushSize}px
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="space-y-3">
@@ -257,13 +442,13 @@ export default function GameMewarnai() {
                     onClick={clearCanvas}
                     className="w-full bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-colors"
                   >
-                    🗑️ Reset
+                    Reset
                   </button>
                   <button
                     onClick={downloadImage}
                     className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-xl font-bold hover:shadow-xl transition-all"
                   >
-                    💾 Download
+                    Download
                   </button>
                 </div>
 
@@ -305,13 +490,15 @@ export default function GameMewarnai() {
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}
                     onMouseLeave={stopDrawing}
-                    className="cursor-crosshair max-w-full"
+                    className={`max-w-full ${tool === 'brush' ? 'cursor-crosshair' : 'cursor-pointer'}`}
                     style={{ touchAction: 'none' }}
                   />
                 </div>
 
                 <div className="mt-4 text-center text-sm text-gray-600">
-                  💡 Tip: Gunakan warna-warna cerah untuk membuat Damar Kurung yang indah!
+                  {tool === 'brush'
+                    ? 'Tip: Gunakan kuas untuk mewarnai dengan detail!'
+                    : 'Tip: Klik area yang ingin diwarnai untuk mengisi seluruh area dengan warna yang dipilih!'}
                 </div>
               </motion.div>
 
@@ -330,6 +517,7 @@ export default function GameMewarnai() {
                 </p>
               </motion.div>
             </div>
+          </div>
           </div>
         </div>
       </div>

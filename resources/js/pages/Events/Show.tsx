@@ -4,6 +4,8 @@ import { Link, router } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
 import { usePage } from '@inertiajs/react';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 
 interface Event {
@@ -176,8 +178,13 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         <PublicNavbar activeMenu="/events" />
 
+        {/* Batik Pattern Overlay */}
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+          <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
+        </div>
+
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Breadcrumb */}
           <div className="mb-8 flex items-center text-sm text-gray-600">
             <Link href="/" className="hover:text-amber-600">Beranda</Link>
@@ -212,7 +219,7 @@ export default function EventShow({ event, relatedEvents, isRegistered }: Props)
                 <div className="absolute top-6 right-6">
                   {getStatusBadge(event.status)}
                 </div>
-                
+
               </motion.div>
 
               {/* Event Title */}

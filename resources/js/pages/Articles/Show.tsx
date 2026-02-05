@@ -10,6 +10,8 @@ import {
     XCircle,
 } from 'lucide-react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 import { router, usePage, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -59,32 +61,36 @@ export default function ArticleShow({ article }: PageProps) {
                 <PublicNavbar activeMenu="/articles" />
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <Link
-                                    href="/articles"
-                                    className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
-                                >
-                                    <ArrowLeft className="h-5 w-5" />
-                                    Kembali
-                                </Link>
-                                
-                            </div>
-                            <Link
-                                href={`/articles/${article.id}/edit`}
-                                className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
-                            >
-                                <Edit className="h-5 w-5" />
-                                Edit Artikel
-                            </Link>
-                        </div>
+                <TraditionalHeader
+                    title={article.judul}
+                    subtitle={`Ditulis oleh ${article.user?.name || 'Admin'}`}
+                    variant="primary"
+                >
+                    <div className="flex gap-4">
+                        <Link
+                            href="/articles"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Kembali
+                        </Link>
+                        <Link
+                            href={`/articles/${article.id}/edit`}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
+                        >
+                            <Edit className="h-5 w-5" />
+                            Edit Artikel
+                        </Link>
                     </div>
-                </div>
-                                
-                {/* Content */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                </TraditionalHeader>
+
+                {/* Background with Batik Pattern */}
+                <div className="relative min-h-screen">
+                    <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+                        <BatikPattern />
+                    </div>
+
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="max-w-4xl mx-auto">
                         {/* Featured Image */}
                         <motion.div
@@ -349,6 +355,7 @@ export default function ArticleShow({ article }: PageProps) {
                             )}
                         </motion.div>
 
+                    </div>
                     </div>
                 </div>
             </div>

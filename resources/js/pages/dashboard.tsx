@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
+import { PageProps } from '@/types';
 import {
     FileText,
     Calendar,
@@ -14,6 +15,8 @@ import {
     Trash2,
 } from 'lucide-react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Stats {
     total_articles: number;
@@ -51,14 +54,16 @@ interface Product {
 }
 
 
-interface DashboardProps {
+interface DashboardProps extends PageProps {
     stats: Stats;
     recentArticles: Article[];
     upcomingEvents: Event[];
     featuredProducts: Product[];
 }
 
-export default function Dashboard({ stats, recentArticles, upcomingEvents, featuredProducts }: DashboardProps) {
+export default function Dashboard({ auth, stats, recentArticles, upcomingEvents, featuredProducts }: DashboardProps) {
+    const isAdmin = auth.user?.role === 'admin';
+
     const statCards = [
         {
             label: 'Total Artikel',
@@ -94,28 +99,19 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                 <PublicNavbar activeMenu="/dashboard" />
 
                 {/* Welcome Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white"
-                >
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sparkles className="w-6 h-6" />
-                                <span className="text-sm font-semibold uppercase tracking-wider">Selamat Datang</span>
-                            </div>
-                            <h1 className="text-4xl md:text-5xl font-bold mb-2">Dashboard Damar Kurung Gresik</h1>
-                            <p className="text-amber-100 max-w-2xl text-lg">
-                                Kelola artikel, event, produk, dan games untuk melestarikan budaya Damar Kurung
-                            </p>
-                        </div>
-                    </div>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-                    <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-16 -mb-16" />
-                </motion.div>
+                <TraditionalHeader
+                    title="Dashboard Damar Kurung Gresik"
+                    subtitle="Kelola artikel, event, produk, dan games untuk melestarikan budaya Damar Kurung"
+                    variant="primary"
+                />
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Background with Batik Pattern */}
+                <div className="relative min-h-screen">
+                    <div className="absolute inset-0 text-amber-900 opacity-[0.02]">
+                        <BatikPattern />
+                    </div>
+
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     {/* Stats Grid */}
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
                         {statCards.map((stat, index) => (
@@ -487,6 +483,7 @@ export default function Dashboard({ stats, recentArticles, upcomingEvents, featu
                             )}
                         </div>
                     </motion.div>
+                    </div>
                 </div>
             </div>
         </>

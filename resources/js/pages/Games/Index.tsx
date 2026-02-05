@@ -2,22 +2,16 @@ import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 export default function GamesIndex() {
   const games = [
     {
       title: 'Mewarnai Damar Kurung',
       description: 'Warnai Damar Kurung dengan kreativitas Anda! Pilih warna favorit dan ciptakan karya seni digital.',
-      icon: '🎨',
       color: 'from-pink-500 to-rose-600',
       href: '/games/mewarnai',
-    },
-    {
-      title: 'Proses Pembuatan',
-      description: 'Saksikan video animasi proses pembuatan Damar Kurung dari awal hingga akhir dengan kontrol interaktif.',
-      icon: '🎬',
-      color: 'from-purple-500 to-indigo-600',
-      href: '/games/animasi',
     },
   ];
 
@@ -29,36 +23,19 @@ export default function GamesIndex() {
         <PublicNavbar activeMenu="/games" />
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-20 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-6xl mb-6"
-            >
-              🎮
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-6xl font-bold mb-6"
-            >
-              Games Edukatif
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-white/90 max-w-3xl mx-auto"
-            >
-              Belajar tentang Damar Kurung dengan cara yang menyenangkan melalui games interaktif
-            </motion.p>
-          </div>
-        </div>
+        <TraditionalHeader
+          title="Games Edukatif"
+          subtitle="Belajar tentang Damar Kurung dengan cara yang menyenangkan melalui games interaktif"
+          variant="primary"
+        />
 
-        {/* Games Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        {/* Background with Batik Pattern */}
+        <div className="relative min-h-screen">
+          <div className="absolute inset-0 text-amber-900 opacity-[0.03]">
+            <BatikPattern />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {games.map((game, index) => (
               <motion.div
@@ -70,7 +47,6 @@ export default function GamesIndex() {
                 <Link href={game.href}>
                   <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group h-full">
                     <div className={`bg-gradient-to-r ${game.color} p-12 text-center`}>
-                      <div className="text-8xl mb-4">{game.icon}</div>
                       <h2 className="text-3xl font-bold text-white">{game.title}</h2>
                     </div>
                     <div className="p-8">
@@ -162,6 +138,7 @@ export default function GamesIndex() {
               </Link>
             </div>
           </motion.div>
+          </div>
         </div>
       </div>
     </>

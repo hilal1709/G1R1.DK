@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 export default function AboutUs() {
   const team = [
@@ -82,29 +84,20 @@ export default function AboutUs() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         <PublicNavbar activeMenu="/about" />
 
-        {/* Hero */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-20 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-6xl font-bold mb-6"
-            >
-              Tentang Damar Kurung Gresik
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-white/90 max-w-3xl mx-auto"
-            >
-              Melestarikan warisan budaya melalui kerajinan Damar Kurung berkualitas tinggi
-            </motion.p>
-          </div>
+        {/* Batik Pattern Overlay */}
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+          <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
         </div>
 
+        {/* Hero */}
+        <TraditionalHeader
+          title="Tentang Damar Kurung Gresik"
+          subtitle="Melestarikan warisan budaya melalui kerajinan Damar Kurung berkualitas tinggi"
+          variant="primary"
+        />
+
         {/* Story */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
             <motion.div
               initial={{ opacity: 0, x: -20 }}

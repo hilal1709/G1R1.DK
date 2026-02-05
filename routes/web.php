@@ -15,9 +15,6 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventMediaController;
 use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\VideoController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ContactController;
 
 use App\Http\Controllers\CommentController;
 
@@ -29,6 +26,7 @@ use App\Http\Controllers\ReviewController;
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartItemController;
+use App\Http\Controllers\GameDesignController;
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -50,14 +48,17 @@ Route::middleware(['auth','role:admin'])->group(function() {
     Route::resource('categories', CategoryController::class);
     Route::resource('products', ProductController::class);
     Route::resource('product-images', ProductImageController::class);
-    
+
     Route::resource('comments', CommentController::class);
     Route::resource('reviews', ReviewController::class);
+
+    // Game Designs
+    Route::resource('game-designs', GameDesignController::class);
 });
 
 Route::middleware(['auth','role:member'])->group(function () {
-    
-    
+
+
     Route::resource('carts',CartController::class);
     Route::resource('cartItems', CartItemController::class);
 });
@@ -83,10 +84,13 @@ Route::get('/about', function () {
 
 // Games
 Route::get('/games', function () {
-    return Inertia::render('Games/Index');
+    return redirect('/games/mewarnai');
 })->name('games.index');
 Route::get('/games/mewarnai', function () {
-    return Inertia::render('Games/Mewarnai');
+    $designs = App\Models\GameDesign::where('is_active', true)
+        ->orderBy('level')
+        ->get();
+    return Inertia::render('Games/Mewarnai', ['designs' => $designs]);
 })->name('games.mewarnai');
 Route::get('/games/animasi', function () {
     return Inertia::render('Games/Animasi');

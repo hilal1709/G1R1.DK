@@ -4,6 +4,8 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import PublicNavbar from '@/components/PublicNavbar';
 import { Edit, Trash2, Plus } from 'lucide-react';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Event {
   id: number;
@@ -98,41 +100,35 @@ export default function EventsIndex({ events, filters }: Props) {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         <PublicNavbar activeMenu="/events" />
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-bold mb-4"
-            >
-              Event & Workshop
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-white/90"
-            >
-              Ikuti berbagai kegiatan menarik seputar Damar Kurung
-            </motion.p>
-          </div>
+        {/* Batik Pattern Overlay */}
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+          <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
         </div>
 
-        {/* Search & Filter */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-12">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Cari Event</h2>
-              {auth?.user?.role === 'admin' && (
+        {/* Header */}
+        <TraditionalHeader
+          title="Event & Workshop"
+          subtitle="Ikuti berbagai kegiatan menarik seputar Damar Kurung"
+          variant="primary"
+        >
+          {auth?.user?.role === 'admin' && (
+            <div className="flex justify-center mt-4">
               <Link
                 href="/events/create"
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                className="flex items-center gap-2 bg-white text-amber-600 px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all border-2 border-white/20"
               >
                 <Plus className="w-5 h-5" />
                 Buat Event Baru
               </Link>
-              )}
+            </div>
+          )}
+        </TraditionalHeader>
+
+        {/* Search & Filter */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-12">
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Cari Event</h2>
             </div>
             <form onSubmit={handleSearch} className="flex gap-4">
               <input
@@ -163,7 +159,7 @@ export default function EventsIndex({ events, filters }: Props) {
         </div>
 
         {/* Events Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
           {events?.data && events.data.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -218,7 +214,7 @@ export default function EventsIndex({ events, filters }: Props) {
                           <div className="absolute top-4 right-4">
                             {getStatusBadge(event.status)}
                           </div>
-            
+
                         </div>
 
                         {/* Content */}

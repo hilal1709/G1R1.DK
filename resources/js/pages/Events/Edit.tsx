@@ -10,6 +10,8 @@ import {
     Clock,
 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
+import BatikPattern from '@/components/BatikPattern';
+import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Event {
     id: number;
@@ -94,29 +96,30 @@ const [deletedMediaIds, setDeletedMediaIds] = useState<number[]>([]);
             <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
                 <PublicNavbar activeMenu="/events" />
 
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 py-16 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl md:text-5xl font-bold mb-4"
-                        >
-                            Edit Event
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-xl text-white/90"
-                        >
-                            Update informasi event Damar Kurung
-                        </motion.p>
-                    </div>
+                {/* Batik Pattern Overlay */}
+                <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+                    <BatikPattern className="w-full h-full text-amber-900 opacity-[0.03]" />
                 </div>
 
+                {/* Header */}
+                <TraditionalHeader
+                    title="Edit Event"
+                    subtitle="Update informasi event Damar Kurung"
+                    variant="primary"
+                >
+                    <div className="flex justify-center mt-4">
+                        <Link
+                            href="/events"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold border-2 border-white/20"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Kembali
+                        </Link>
+                    </div>
+                </TraditionalHeader>
+
                 {/* Form */}
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -323,7 +326,7 @@ const [deletedMediaIds, setDeletedMediaIds] = useState<number[]>([]);
                                 )}
                             </div>
 
-                
+
 
                             {/* Description */}
                             <div>
