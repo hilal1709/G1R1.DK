@@ -9,10 +9,6 @@
 /resources/js/wayfinder
 /storage/*.key
 /storage/pail
-/storage/framework/cache
-/storage/framework/sessions
-/storage/framework/testing
-/storage/framework/views
 /vendor
 .DS_Store
 .env
