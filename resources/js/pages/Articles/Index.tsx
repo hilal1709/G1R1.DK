@@ -19,11 +19,11 @@ import TraditionalHeader from '@/components/TraditionalHeader';
 
 interface Article {
     id: number;
-    judul: string | null;       // judul artikel
-    isi: string | null;  // isi artikel
+    judul: string | null;
+    isi: string | null;
     article_medias?: { file_path: string }[];
-    user: { name: string } | null; // author
-    comments: any[];
+    user: { name: string } | null;
+    comments_count: number;
     created_at: string;
     updated_at: string;
 }
@@ -129,7 +129,7 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                 key={article.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
+                                transition={{ delay: Math.min(index * 0.05, 0.3) }}
                                 className="group bg-white rounded-xl border border-amber-100 shadow-lg hover:shadow-xl transition-all overflow-hidden"
                             >
                                 {/* Image */}
@@ -137,7 +137,9 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
                                     {article.article_medias?.length ? (
                                         <img
                                             src={article.article_medias[0].file_path}
-                                            alt={article.judul}
+                                            alt={article.judul ?? ''}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                         />
                                     ) : (

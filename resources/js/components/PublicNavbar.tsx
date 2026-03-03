@@ -65,6 +65,23 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
                             </Link>
                         ))}
 
+                        {!user && (
+                            <div className="flex items-center space-x-2">
+                                <Link
+                                    href="/login"
+                                    className="px-4 py-2 text-sm font-medium text-amber-600 border border-amber-600 rounded-lg hover:bg-amber-50 transition-colors"
+                                >
+                                    Masuk
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg hover:from-amber-600 hover:to-orange-700 transition-colors"
+                                >
+                                    Daftar
+                                </Link>
+                            </div>
+                        )}
+
                         {user && (
                             <div className="relative">
                                 <button
@@ -131,6 +148,25 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
                                 {item.label}
                             </Link>
                         ))}
+
+                        {!user && (
+                            <div className="px-4 py-2 border-t border-gray-200 mt-2 flex flex-col space-y-2">
+                                <Link
+                                    href="/login"
+                                    className="w-full text-center px-4 py-2 text-sm font-medium text-amber-600 border border-amber-600 rounded-lg hover:bg-amber-50 transition-colors"
+                                    onClick={() => setShowMobileMenu(false)}
+                                >
+                                    Masuk
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    className="w-full text-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg hover:from-amber-600 hover:to-orange-700 transition-colors"
+                                    onClick={() => setShowMobileMenu(false)}
+                                >
+                                    Daftar
+                                </Link>
+                            </div>
+                        )}
 
                         {user && (
                             <>

@@ -521,7 +521,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
                   className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
                 >
                   <div className="aspect-video bg-gray-200 relative group cursor-pointer">
@@ -574,13 +574,15 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
                 >
                   <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.nama}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f59e0b" width="400" height="400"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="48" text-anchor="middle" x="200" y="220"%3EProduk%3C/text%3E%3C/svg%3E';
@@ -653,13 +655,15 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group h-full flex flex-col"
                 >
                   <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                     <img
                       src={article.image}
                       alt={article.judul}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.src = '/images/article-placeholder.jpg';
@@ -741,13 +745,15 @@ export default function Home({ products, events, articles }: HomeProps) {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
                 >
                   <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
                     <img
                       src={event.image}
                       alt={event.nama}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%2334d399" width="400" height="400"/%3E%3Ctext fill="%23ffffff" font-family="Arial" font-size="48" text-anchor="middle" x="200" y="220"%3EEvent%3C/text%3E%3C/svg%3E';

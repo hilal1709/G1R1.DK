@@ -46,14 +46,15 @@ createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(
             `./pages/${name}.tsx`,
-            import.meta.glob('./pages/**/*.tsx'),
+            import.meta.glob('./pages/**/*.tsx', { eager: false }),
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
         root.render(<App {...props} />);
     },
     progress: {
-        color: '#4B5563',
+        color: '#f59e0b',
+        showSpinner: true,
     },
 });
 

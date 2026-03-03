@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Event;
 use App\Models\Product;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Database\Eloquent\Model;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -36,5 +37,8 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Catch N+1 queries in local dev
+        Model::preventLazyLoading(! app()->environment('production'));
     }
 }

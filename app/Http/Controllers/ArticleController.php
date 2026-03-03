@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Article;
 use App\Models\ArticleMedia;
 use Inertia\Inertia;
-
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
@@ -16,10 +16,12 @@ class ArticleController extends Controller
 
     public function index()
     {
-        
-        $articles = Article::with('articleMedias', 'user', 'comments.user')
-        ->latest('created_at') // urutkan berdasarkan tanggal terbaru
-        ->paginate(10); // paginate data artikel
+        $articles = Article::with(['articleMedias', 'user'])
+            ->withCount('comments')         // count saja, tidak load semua comment
+            ->select('id', 'judul', 'isi', 'user_id', 'created_at', 'updated_at')
+            ->latest('created_at')
+            ->paginate(10);
+
         return Inertia::render('Articles/Index', [
             'articles' => $articles,
         ]);
@@ -37,7 +39,7 @@ class ArticleController extends Controller
         $article = Article::create([
             'judul' => $request->judul,
             'isi' => $request->isi,
-            'user_id' => auth()->id(),          // otomatis ID user login
+            'user_id' => Auth::id(),          // otomatis ID user login
         ]);
 
         if($request->hasFile('files')) {
@@ -56,7 +58,7 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        
+
         //$article = Article::findOrFail($id);
         $article->load('user', 'articleMedias', 'comments.user'); // tetap load relasi
         return Inertia::render('Articles/Show', [
@@ -72,7 +74,7 @@ class ArticleController extends Controller
             'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov',
             //'jenis.*' => 'required|string',
         ]);
-        
+
         // Update artikel
         $article->update($request->only('judul','isi'));
 
@@ -82,7 +84,7 @@ class ArticleController extends Controller
                 $media = ArticleMedia::find($mediaId);
                 if ($media && $file) {
                     // Hapus file lama
-                    \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
 
                     // Simpan file baru
                     $path = $file->store('uploads/articlemedia', 'public');
@@ -99,7 +101,7 @@ class ArticleController extends Controller
                 $media = ArticleMedia::find($mediaId);
                 if($media) {
                     // Hapus file lama di storage
-                    \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
                     // Hapus record
                     $media->delete();
                 }
@@ -126,7 +128,7 @@ class ArticleController extends Controller
         // Hapus semua media terkait artikel
         foreach ($article->articleMedias as $media) {
             // Hapus file fisik di storage
-            \Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
+            Storage::disk('public')->delete(str_replace('/storage/', '', $media->file_path));
             // Hapus record media
             $media->delete();
         }
