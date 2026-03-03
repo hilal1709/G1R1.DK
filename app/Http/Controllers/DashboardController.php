@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -34,7 +35,7 @@ class DashboardController extends Controller
                     'judul' => $article->judul,
                     'excerpt' => \Illuminate\Support\Str::limit(strip_tags($article->isi), 100),
                     'author' => $article->user?->name ?? 'Admin',
-                    
+
                     'image' => $article->articleMedias->first()
                         ? $article->articleMedias->first()->file_path
                         : null,
@@ -91,7 +92,7 @@ class DashboardController extends Controller
 
     public function userDashboard()
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
 
         $totalOrders = Transaction::where('user_id', $userId)->count();
 
@@ -116,13 +117,19 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('user.dashboard', compact(
-            'totalOrders',
-            'menungguPembayaran',
-            'menungguVerifikasi',
-            'dikirim',
-            'selesai',
-            'recentOrders'
-        ));
+        return Inertia::render('UserDashboard', [
+            'totalOrders'        => $totalOrders,
+            'menungguPembayaran' => $menungguPembayaran,
+            'menungguVerifikasi' => $menungguVerifikasi,
+            'dikirim'            => $dikirim,
+            'selesai'            => $selesai,
+            'recentOrders'       => $recentOrders->map(fn ($o) => [
+                'id'           => $o->id,
+                'order_number' => $o->order_number,
+                'total'        => $o->total,
+                'status'       => $o->status,
+                'created_at'   => $o->created_at,
+            ]),
+        ]);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\TransactionDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 
 class TransactionController extends Controller
@@ -20,7 +21,7 @@ class TransactionController extends Controller
 
         return view('transactions.checkout', compact('product', 'qty'));
     }
-    
+
     public function store(Request $request)
     {
         DB::beginTransaction();
@@ -117,7 +118,7 @@ class TransactionController extends Controller
             'ongkir'   => $request->ongkir,
             'total'    => $order->subtotal + $request->ongkir,
             'status'   => 'menunggu_pembayaran',
-            'admin_id' => auth()->id(),
+            'admin_id' => Auth::id(),
         ]);
 
         return redirect('/admin/orders/' . $id)
@@ -139,7 +140,7 @@ class TransactionController extends Controller
         $order->resi = $request->resi;
         $order->status = 'dikirim';
         $order->dikirim_pada = now();
-        $order->admin_id = auth()->id(); // simpan admin yg proses
+        $order->admin_id = Auth::id(); // simpan admin yg proses
         $order->save();
 
         return back()->with('success', 'Pesanan berhasil dikirim.');
@@ -147,20 +148,51 @@ class TransactionController extends Controller
 
     public function userOrders()
     {
-        $orders = Transaction::where('user_id', auth()->id())
+        $orders = Transaction::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(fn ($o) => [
+                'id'           => $o->id,
+                'order_number' => $o->order_number,
+                'total'        => $o->total,
+                'status'       => $o->status,
+                'created_at'   => $o->created_at,
+            ]);
 
-        return view('user.orders.index', compact('orders'));
+        return Inertia::render('User/Orders/Index', ['orders' => $orders]);
     }
 
     public function userOrderDetail($id)
     {
         $order = Transaction::with('details.product')
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->findOrFail($id);
 
-        return view('user.orders.show', compact('order'));
+        return Inertia::render('User/Orders/Show', [
+            'order' => [
+                'id'             => $order->id,
+                'order_number'   => $order->order_number,
+                'status'         => $order->status,
+                'subtotal'       => $order->subtotal,
+                'ongkir'         => $order->ongkir,
+                'total'          => $order->total,
+                'nama_penerima'  => $order->nama_penerima,
+                'no_wa'          => $order->no_wa,
+                'alamat'         => $order->alamat,
+                'ekspedisi'      => $order->ekspedisi,
+                'bukti_transfer' => $order->bukti_transfer,
+                'dibayar_pada'   => $order->dibayar_pada,
+                'resi'           => $order->resi,
+                'dikirim_pada'   => $order->dikirim_pada,
+                'created_at'     => $order->created_at,
+                'details'        => $order->details->map(fn ($d) => [
+                    'id'    => $d->id,
+                    'qty'   => $d->qty,
+                    'harga' => $d->harga,
+                    'product' => $d->product ? ['id' => $d->product->id, 'nama' => $d->product->nama] : null,
+                ]),
+            ],
+        ]);
     }
 
     public function uploadBukti(Request $request, $id)

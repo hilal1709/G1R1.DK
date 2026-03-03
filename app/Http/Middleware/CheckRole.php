@@ -23,9 +23,12 @@ class CheckRole
             return redirect()->route('login');
         }
 
-        // Jika sudah login tapi role tidak sesuai, tampilkan 403
+        // Jika sudah login tapi role tidak sesuai, redirect ke halaman yang sesuai
         if (!in_array($user->role, $roles)) {
-            abort(403, 'Unauthorized.');
+            if ($user->role === 'admin') {
+                return redirect('/dashboard');
+            }
+            return redirect('/user-dashboard');
         }
 
         return $next($request);

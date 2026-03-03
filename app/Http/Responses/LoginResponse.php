@@ -11,11 +11,11 @@ class LoginResponse implements LoginResponseContract
     {
         $user = Auth::user();
 
-        // Redirect admin to dashboard, member to homepage
+        // Redirect admin to dashboard, member to user-dashboard
         if ($user && $user->role === 'admin') {
-            return redirect()->intended('/dashboard');
+            return redirect('/dashboard');
         }
 
-        return redirect()->intended('/');
+        return redirect('/user-dashboard');
     }
 }

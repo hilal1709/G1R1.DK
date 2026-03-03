@@ -55,7 +55,7 @@ class FortifyServiceProvider extends ServiceProvider
                 return '/dashboard';
             }
 
-            return '/';
+            return '/user-dashboard';
         });
 
         $this->configureRateLimiting();
