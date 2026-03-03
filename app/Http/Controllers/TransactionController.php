@@ -16,10 +16,20 @@ class TransactionController extends Controller
 {
     public function showCheckout(Request $request, $id)
     {
-        $product = Product::findOrFail($id);
-        $qty = $request->qty;
+        $product = Product::with(['images', 'category'])->findOrFail($id);
+        $qty = $request->qty ?? 1;
 
-        return view('transactions.checkout', compact('product', 'qty'));
+        return Inertia::render('Products/Checkout', [
+            'product' => [
+                'id'       => $product->id,
+                'nama'     => $product->nama,
+                'harga'    => $product->harga,
+                'stok'     => $product->stok,
+                'images'   => $product->images->map(fn($img) => ['gambar' => $img->gambar])->values(),
+                'category' => ['nama' => $product->category?->nama ?? ''],
+            ],
+            'qty' => (int) $qty,
+        ]);
     }
 
     public function store(Request $request)

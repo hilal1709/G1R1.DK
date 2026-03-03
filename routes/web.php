@@ -57,7 +57,7 @@ Route::middleware(['auth','role:admin'])->group(function() {
     Route::resource('products', ProductController::class);
     Route::resource('product-images', ProductImageController::class);
 
-    
+
 
     // Game Designs
     Route::resource('game-designs', GameDesignController::class);
@@ -67,21 +67,21 @@ Route::middleware(['auth','role:member'])->group(function () {
 
     Route::get('/user-dashboard', [DashboardController::class, 'userDashboard']);
 
-    Route::get('/checkout/{id}', [TransactionController::class, 'showCheckout']);
-    Route::post('/checkout', [TransactionController::class, 'store'])->name('checkout.store');
-
-    Route::post('/transactions/{id}/upload', [TransactionController::class, 'uploadBukti'])->name('transactions.upload');
-        
-    Route::get('/orders', [TransactionController::class, 'userOrders']);
-    Route::get('/orders/{id}', [TransactionController::class, 'userOrderDetail'])->name('user.orders.show');
-
     Route::resource('carts',CartController::class);
     Route::resource('cartItems', CartItemController::class);
 
 });
 
 Route::middleware(['auth','role:member,admin'])->group(function () {
-    //belom kepikiran
+
+    Route::get('/checkout/{id}', [TransactionController::class, 'showCheckout']);
+    Route::post('/checkout', [TransactionController::class, 'store'])->name('checkout.store');
+
+    Route::post('/transactions/{id}/upload', [TransactionController::class, 'uploadBukti'])->name('transactions.upload');
+
+    Route::get('/orders', [TransactionController::class, 'userOrders']);
+    Route::get('/orders/{id}', [TransactionController::class, 'userOrderDetail'])->name('user.orders.show');
+
     Route::post('/events/{event}/registration', [EventRegistrationController::class, 'store'])
     ->name('events.registration.store');
 

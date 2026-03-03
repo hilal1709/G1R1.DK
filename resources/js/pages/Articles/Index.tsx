@@ -61,9 +61,10 @@ export default function ArticlesIndex({ articles, auth  }: PageProps) {
         }
     };
 
-    const filteredArticles = articles.data.filter((article) =>
-        article.judul?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false,
-    );
+    const filteredArticles = articles.data.filter((article) => {
+        if (!searchQuery) return true;
+        return article.judul?.toLowerCase().includes(searchQuery.toLowerCase()) ?? true;
+    });
 
 
     return (

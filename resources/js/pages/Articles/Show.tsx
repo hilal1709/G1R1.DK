@@ -74,13 +74,15 @@ export default function ArticleShow({ article }: PageProps) {
                             <ArrowLeft className="h-5 w-5" />
                             Kembali
                         </Link>
-                        <Link
-                            href={`/articles/${article.id}/edit`}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
-                        >
-                            <Edit className="h-5 w-5" />
-                            Edit Artikel
-                        </Link>
+                        {auth?.user?.role === 'admin' && (
+                            <Link
+                                href={`/articles/${article.id}/edit`}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
+                            >
+                                <Edit className="h-5 w-5" />
+                                Edit Artikel
+                            </Link>
+                        )}
                     </div>
                 </TraditionalHeader>
 
