@@ -45,7 +45,7 @@ class GameDesignController extends Controller
 
         GameDesign::create($validated);
 
-        return redirect()->route('game-designs.index')
+        return redirect()->route('games.mewarnai')
             ->with('success', 'Desain berhasil ditambahkan');
     }
 
@@ -88,7 +88,7 @@ class GameDesignController extends Controller
 
         $gameDesign->update($validated);
 
-        return redirect()->route('game-designs.index')
+        return redirect()->route('games.mewarnai')
             ->with('success', 'Desain berhasil diupdate');
     }
 
@@ -101,7 +101,7 @@ class GameDesignController extends Controller
 
         $gameDesign->delete();
 
-        return redirect()->route('game-designs.index')
+        return redirect()->route('games.mewarnai')
             ->with('success', 'Desain berhasil dihapus');
     }
 }

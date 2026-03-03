@@ -226,7 +226,7 @@ export default function Login({ canResetPassword, status }: LoginProps) {
                                 ) : (
                                     <>
                                         <LogIn className="w-5 h-5" />
-                                        <span>Masuk ke Dashboard</span>
+                                        <span>Masuk</span>
                                     </>
                                 )}
                             </motion.button>

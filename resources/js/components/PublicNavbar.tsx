@@ -22,7 +22,7 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
         { href: '/articles', label: 'Artikel' },
         { href: '/products', label: 'Produk' },
         { href: '/events', label: 'Event' },
-        { href: '/games', label: 'Games' },
+        ...(user ? [{ href: '/games', label: 'Games' }] : []),
         { href: '/about', label: 'Tentang' },
         { href: '/contact', label: 'Kontak' },
     ];

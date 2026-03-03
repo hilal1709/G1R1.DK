@@ -23,34 +23,21 @@ export default defineConfig({
         drop: ['console', 'debugger'],
     },
     build: {
-        // Increase warning threshold so we see only truly large chunks
         chunkSizeWarningLimit: 600,
         rollupOptions: {
             output: {
                 manualChunks(id) {
-                    // React core
-                    if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
+                    // Semua node_modules React (react, react-dom, scheduler) harus satu chunk
+                    if (
+                        id.includes('node_modules/react/') ||
+                        id.includes('node_modules/react-dom/') ||
+                        id.includes('node_modules/scheduler/')
+                    ) {
                         return 'vendor-react';
                     }
-                    // Inertia
-                    if (id.includes('node_modules/@inertiajs')) {
-                        return 'vendor-inertia';
-                    }
-                    // Framer Motion - split so it's only loaded when needed
-                    if (id.includes('node_modules/framer-motion')) {
+                    // Framer Motion — besar tapi hanya dipakai di halaman tertentu
+                    if (id.includes('node_modules/framer-motion/')) {
                         return 'vendor-framer';
-                    }
-                    // Radix UI components
-                    if (id.includes('node_modules/@radix-ui')) {
-                        return 'vendor-radix';
-                    }
-                    // Lucide icons
-                    if (id.includes('node_modules/lucide-react')) {
-                        return 'vendor-icons';
-                    }
-                    // Other node_modules
-                    if (id.includes('node_modules')) {
-                        return 'vendor-misc';
                     }
                 },
             },

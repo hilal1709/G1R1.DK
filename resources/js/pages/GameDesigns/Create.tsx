@@ -164,7 +164,7 @@ export default function Create({ auth }: Props) {
                     variant="primary"
                 >
                     <Link
-                        href="/game-designs"
+                        href="/games/mewarnai"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-white text-amber-600 rounded-xl hover:bg-amber-50 transition-all shadow-lg hover:shadow-xl font-bold"
                     >
                         <ArrowLeft className="h-5 w-5" />

@@ -206,7 +206,7 @@ export default function Edit({ auth, design }: Props) {
                             Edit Desain: {design.nama}
                         </h2>
                         <Link
-                            href="/game-designs"
+                            href="/games/mewarnai"
                             className="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700"
                         >
                             Kembali
