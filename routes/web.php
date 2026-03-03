@@ -78,6 +78,20 @@ Route::middleware(['auth','role:member'])->group(function () {
     Route::resource('carts',CartController::class);
     Route::resource('cartItems', CartItemController::class);
 
+});
+
+Route::middleware(['auth','role:member,admin'])->group(function () {
+    //belom kepikiran
+    Route::post('/events/{event}/registration', [EventRegistrationController::class, 'store'])
+    ->name('events.registration.store');
+
+    // Cancel pendaftaran (DELETE /events/{event}/registration)
+    Route::delete('/events/{event}/registration', [EventRegistrationController::class, 'destroy'])
+    ->name('events.registration.destroy');
+
+    Route::resource('comments', CommentController::class);
+    Route::resource('reviews', ReviewController::class);
+
     // Games
     Route::get('/games', function () {
         return redirect('/games/mewarnai');
@@ -94,18 +108,7 @@ Route::middleware(['auth','role:member'])->group(function () {
 
 });
 
-Route::middleware(['auth','role:member,admin'])->group(function () {
-    //belom kepikiran
-    Route::post('/events/{event}/registration', [EventRegistrationController::class, 'store'])
-    ->name('events.registration.store');
 
-    // Cancel pendaftaran (DELETE /events/{event}/registration)
-    Route::delete('/events/{event}/registration', [EventRegistrationController::class, 'destroy'])
-    ->name('events.registration.destroy');
-
-    Route::resource('comments', CommentController::class);
-    Route::resource('reviews', ReviewController::class);
-});
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
