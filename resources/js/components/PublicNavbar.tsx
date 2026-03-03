@@ -14,8 +14,8 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
 
     const homeRoute = user
     ? user.role === 'admin'
-        ? 'dashboard'
-        : 'user-dashboard'
+        ? '/dashboard'       // tambahkan slash di depan
+        : '/user-dashboard'  // juga tambahkan slash
     : '/';
     const menuItems = [
         { href: homeRoute, label: 'Beranda' },
