@@ -12,8 +12,13 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+    const homeRoute = user
+    ? user.role === 'admin'
+        ? 'dashboard'
+        : 'user-dashboard'
+    : '/';
     const menuItems = [
-        { href: '/dashboard', label: 'Beranda' },
+        { href: homeRoute, label: 'Beranda' },
         { href: '/articles', label: 'Artikel' },
         { href: '/products', label: 'Produk' },
         { href: '/events', label: 'Event' },

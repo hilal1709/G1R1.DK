@@ -21,6 +21,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
+use App\Http\Controllers\TransactionController;
 
 use App\Http\Controllers\ReviewController;
 
@@ -34,6 +35,13 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 
 Route::middleware(['auth','role:admin'])->group(function() {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/admin/orders', [TransactionController::class, 'adminIndex']);
+    Route::get('/admin/orders/{id}', [TransactionController::class, 'adminShow']);
+
+    Route::post('/admin/orders/{id}/confirm', [TransactionController::class, 'adminConfirm']);
+    Route::post('/admin/orders/{id}/kirim', [TransactionController::class, 'kirimOrder'])->name('admin.orders.kirim');
+
     Route::get('/register-admin', [AuthController::class, 'showRegisterForm']);
     Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
 
@@ -49,8 +57,7 @@ Route::middleware(['auth','role:admin'])->group(function() {
     Route::resource('products', ProductController::class);
     Route::resource('product-images', ProductImageController::class);
 
-    Route::resource('comments', CommentController::class);
-    Route::resource('reviews', ReviewController::class);
+    
 
     // Game Designs
     Route::resource('game-designs', GameDesignController::class);
@@ -58,9 +65,19 @@ Route::middleware(['auth','role:admin'])->group(function() {
 
 Route::middleware(['auth','role:member'])->group(function () {
 
+    Route::get('/user-dashboard', [DashboardController::class, 'userDashboard']);
+
+    Route::get('/checkout/{id}', [TransactionController::class, 'showCheckout']);
+    Route::post('/checkout', [TransactionController::class, 'store'])->name('checkout.store');
+
+    Route::post('/transactions/{id}/upload', [TransactionController::class, 'uploadBukti'])->name('transactions.upload');
+        
+    Route::get('/orders', [TransactionController::class, 'userOrders']);
+    Route::get('/orders/{id}', [TransactionController::class, 'userOrderDetail'])->name('user.orders.show');
 
     Route::resource('carts',CartController::class);
     Route::resource('cartItems', CartItemController::class);
+
 });
 
 Route::middleware(['auth','role:member,admin'])->group(function () {
@@ -71,6 +88,9 @@ Route::middleware(['auth','role:member,admin'])->group(function () {
     // Cancel pendaftaran (DELETE /events/{event}/registration)
     Route::delete('/events/{event}/registration', [EventRegistrationController::class, 'destroy'])
     ->name('events.registration.destroy');
+
+    Route::resource('comments', CommentController::class);
+    Route::resource('reviews', ReviewController::class);
 });
 
 Route::get('/', [HomeController::class, 'index'])->name('home');

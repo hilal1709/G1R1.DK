@@ -8,6 +8,7 @@ use App\Models\Article;
 use App\Models\Event;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Transaction;
 
 class DashboardController extends Controller
 {
@@ -86,5 +87,42 @@ class DashboardController extends Controller
             'upcomingEvents' => $upcomingEvents,
             'featuredProducts' => $featuredProducts,
         ]);
+    }
+
+    public function userDashboard()
+    {
+        $userId = auth()->id();
+
+        $totalOrders = Transaction::where('user_id', $userId)->count();
+
+        $menungguPembayaran = Transaction::where('user_id', $userId)
+            ->where('status', 'menunggu_pembayaran')
+            ->count();
+
+        $menungguVerifikasi = Transaction::where('user_id', $userId)
+            ->where('status', 'menunggu_verifikasi')
+            ->count();
+
+        $dikirim = Transaction::where('user_id', $userId)
+            ->where('status', 'dikirim')
+            ->count();
+
+        $selesai = Transaction::where('user_id', $userId)
+            ->where('status', 'selesai')
+            ->count();
+
+        $recentOrders = Transaction::where('user_id', $userId)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('user.dashboard', compact(
+            'totalOrders',
+            'menungguPembayaran',
+            'menungguVerifikasi',
+            'dikirim',
+            'selesai',
+            'recentOrders'
+        ));
     }
 }

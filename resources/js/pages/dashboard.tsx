@@ -241,6 +241,22 @@ export default function Dashboard({ auth, stats, recentArticles, upcomingEvents,
                                     Hubungi kami untuk informasi lebih lanjut
                                 </p>
                             </Link>
+
+                            <Link
+                                href="/admin/orders"
+                                className="group relative overflow-hidden rounded-xl border border-amber-100 bg-white p-6 transition-all hover:shadow-xl hover:border-red-300 hover:-translate-y-1"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="rounded-lg bg-red-100 p-3">
+                                        <ShoppingBag className="h-6 w-6 text-red-600" />
+                                    </div>
+                                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">Pesanan</h3>
+                                <p className="text-sm text-gray-600">
+                                    Kelola pesanan masuk & konfirmasi ongkir
+                                </p>
+                            </Link>
                         </div>
                     </motion.div>
 

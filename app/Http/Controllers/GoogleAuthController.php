@@ -31,8 +31,11 @@ class GoogleAuthController extends Controller
 
             Auth::login($user);
 
-            // Redirect ke halaman home
-            return redirect()->route('home');
+            if ($user->role === 'admin') {
+                return redirect('/dashboard');
+            }
+
+            return redirect('/user-dashboard');
         } catch (\Exception $e) {
             // Jika ada kesalahan, redirect ke halaman login dengan pesan error
             return redirect()->route('login')->with('error', 'Terjadi kesalahan saat login dengan Google.');
