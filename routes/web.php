@@ -78,6 +78,20 @@ Route::middleware(['auth','role:member'])->group(function () {
     Route::resource('carts',CartController::class);
     Route::resource('cartItems', CartItemController::class);
 
+    // Games
+    Route::get('/games', function () {
+        return redirect('/games/mewarnai');
+    })->name('games.index');
+    Route::get('/games/mewarnai', function () {
+        $designs = App\Models\GameDesign::where('is_active', true)
+            ->orderBy('level')
+            ->get();
+        return Inertia::render('Games/Mewarnai', ['designs' => $designs]);
+    })->name('games.mewarnai');
+    Route::get('/games/animasi', function () {
+        return Inertia::render('Games/Animasi');
+    })->name('games.animasi');
+
 });
 
 Route::middleware(['auth','role:member,admin'])->group(function () {
@@ -102,19 +116,7 @@ Route::get('/about', function () {
     return Inertia::render('AboutUs');
 })->name('about');
 
-// Games
-Route::get('/games', function () {
-    return redirect('/games/mewarnai');
-})->name('games.index');
-Route::get('/games/mewarnai', function () {
-    $designs = App\Models\GameDesign::where('is_active', true)
-        ->orderBy('level')
-        ->get();
-    return Inertia::render('Games/Mewarnai', ['designs' => $designs]);
-})->name('games.mewarnai');
-Route::get('/games/animasi', function () {
-    return Inertia::render('Games/Animasi');
-})->name('games.animasi');
+
 
 Route::resource('articles', ArticleController::class)->only(['index','show']);
 Route::resource('events', EventController::class)->only(['index','show']);
