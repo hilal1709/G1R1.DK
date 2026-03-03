@@ -1,7 +1,13 @@
-import { motion } from 'framer-motion';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from '@inertiajs/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { animate } from 'animejs';
 import BatikPattern from '@/components/BatikPattern';
+import FloatingLanterns from '@/components/FloatingLanterns';
+import AnimatedCounter from '@/components/AnimatedCounter';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Product {
   id: number;
@@ -43,6 +49,7 @@ interface HomeProps {
 
 export default function Home({ products, events, articles }: HomeProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const homeNavRef = useRef<HTMLElement>(null);
 
   const heroSlides = [
     {
@@ -103,110 +110,132 @@ export default function Home({ products, events, articles }: HomeProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [handleScroll]);
 
+  // GSAP entry: animate home nav in on load
+  useEffect(() => {
+    if (homeNavRef.current) {
+      gsap.fromTo(homeNavRef.current, { y: -70, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
+    }
+  }, []);
+
+  // GSAP ScrollTrigger: reveal sections
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Section headings
+      gsap.utils.toArray<HTMLElement>('.gsap-section-heading').forEach((el) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 36 },
+          {
+            opacity: 1, y: 0, duration: 0.7, ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' },
+          }
+        );
+      });
+
+      // Cards stagger
+      gsap.utils.toArray<HTMLElement>('.gsap-cards-grid').forEach((grid) => {
+        const cards = grid.querySelectorAll('.gsap-card');
+        gsap.fromTo(
+          cards,
+          { opacity: 0, y: 40, scale: 0.96 },
+          {
+            opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.1, ease: 'power3.out',
+            scrollTrigger: { trigger: grid, start: 'top 85%', toggleActions: 'play none none none' },
+          }
+        );
+      });
+
+      // Left/right reveal for about section
+      gsap.fromTo('.gsap-slide-left', { opacity: 0, x: -60 }, {
+        opacity: 1, x: 0, duration: 0.8, ease: 'power3.out',
+        scrollTrigger: { trigger: '.gsap-slide-left', start: 'top 82%', toggleActions: 'play none none none' },
+      });
+      gsap.fromTo('.gsap-slide-right', { opacity: 0, x: 60 }, {
+        opacity: 1, x: 0, duration: 0.8, ease: 'power3.out',
+        scrollTrigger: { trigger: '.gsap-slide-right', start: 'top 82%', toggleActions: 'play none none none' },
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  // anime.js: CTA button pulse on hover (applied globally)
+  useEffect(() => {
+    const btns = document.querySelectorAll('.anime-cta-btn');
+    btns.forEach((btn) => {
+      (btn as HTMLElement).addEventListener('mouseenter', () => {
+        animate(btn as HTMLElement, { scale: [1, 1.06, 1], duration: 380, ease: 'outElastic(1, .8)' });
+      });
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Navigation */}
       <nav
+        ref={homeNavRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500
           ${scrolled
-            ? "bg-white/90 backdrop-blur-md shadow-sm"
+            ? "bg-white/95 backdrop-blur-md shadow-md border-b border-amber-100"
             : "bg-transparent"
           }
         `}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-2 sm:space-x-3"
-            >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex items-center justify-center">
+            <a href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden flex items-center justify-center ring-2 ring-white/30 group-hover:ring-amber-400 transition-all duration-200">
                 <img
                   src="/images/giri-dk-logo-o.PNG"
                   alt="Damar Kurung Logo"
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span
-                className={`text-lg sm:text-xl font-bold transition-colors ${
-                  scrolled
-                    ? "bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"
-                    : "text-white"
-                }`}
-              >
-                Damar Kurung
-              </span>
-            </motion.div>
+              <div className="hidden sm:flex flex-col leading-none">
+                <span className={`text-base font-bold transition-colors ${scrolled ? 'bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent' : 'text-white'}`}>
+                  Damar Kurung
+                </span>
+                <span className={`text-[10px] tracking-widest uppercase font-medium ${scrolled ? 'text-gray-400' : 'text-white/60'}`}>
+                  Gresik
+                </span>
+              </div>
+            </a>
 
-            <div className="hidden md:flex items-center space-x-4 sm:space-x-6 lg:space-x-8">
-              <a
-                href="#beranda"
-                className={`text-sm lg:text-base transition-colors ${
-                  scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
-                }`}
-              >
-                Beranda
-              </a>
-              <a
-                href="#tentang"
-                className={`text-sm lg:text-base transition-colors ${
-                  scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
-                }`}
-              >
-                Tentang
-              </a>
-              <a
-                href="#produk"
-                className={`text-sm lg:text-base transition-colors ${
-                  scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
-                }`}
-              >
-                Produk
-              </a>
-              <a
-                href="#event"
-                className={`text-sm lg:text-base transition-colors ${
-                  scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
-                }`}
-              >
-                Event
-              </a>
-              <a
-                href="#artikel"
-                className={`text-sm lg:text-base transition-colors ${
-                  scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
-                }`}
-              >
-                Artikel
-              </a>
+            <div className="hidden md:flex items-center space-x-1">
+              {[
+                { href: '#beranda', label: 'Beranda' },
+                { href: '#tentang', label: 'Tentang' },
+                { href: '#produk', label: 'Produk' },
+                { href: '#event', label: 'Event' },
+                { href: '#artikel', label: 'Artikel' },
+              ].map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className={`relative px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 group hover:text-amber-400 ${
+                    scrolled ? 'text-gray-700 hover:text-amber-600 hover:bg-amber-50/60' : 'text-white'
+                  }`}
+                >
+                  {label}
+                  <span className="absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-amber-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
+                </a>
+              ))}
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <a
                 href="/login"
-                className={`text-sm lg:text-base transition-colors ${
+                className={`hidden sm:inline-block px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 ${
                   scrolled
-                    ? "text-gray-700 hover:text-amber-600"
-                    : "text-white hover:text-amber-400"
+                    ? "text-amber-600 border-2 border-amber-500 hover:bg-amber-50"
+                    : "text-white border-2 border-white/60 hover:bg-white/10"
                 }`}
               >
                 Masuk
               </a>
               <a
                 href="/register"
-                className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-1.5 sm:px-6 sm:py-2 text-sm lg:text-base rounded-full hover:shadow-lg transition-all"
+                className="anime-cta-btn px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl hover:from-amber-600 hover:to-orange-700 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-200"
               >
                 Daftar
               </a>
@@ -217,18 +246,11 @@ export default function Home({ products, events, articles }: HomeProps) {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden pt-16">
+        {/* Floating lanterns anime.js background */}
+        <FloatingLanterns count={20} />
+
         {heroSlides.map((slide, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: currentSlide === index ? 1 : 0,
-              scale: currentSlide === index ? 1 : 1.1
-            }}
-            transition={{ duration: 0.7 }}
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ pointerEvents: currentSlide === index ? 'auto' : 'none' }}
-          >
+          <div key={index} className="absolute inset-0 flex items-center justify-center transition-all duration-700" style={{ opacity: currentSlide === index ? 1 : 0, transform: currentSlide === index ? 'scale(1)' : 'scale(1.1)', pointerEvents: currentSlide === index ? 'auto' : 'none' }}>
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
@@ -239,55 +261,35 @@ export default function Home({ products, events, articles }: HomeProps) {
 
             <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
               <div className="max-w-3xl">
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-amber-400 font-semibold text-base sm:text-lg mb-3 sm:mb-4 tracking-wider"
-                >
+                <p className="text-amber-400 font-semibold text-base sm:text-lg mb-3 sm:mb-4 tracking-wider">
                   {slide.subtitle}
-                </motion.p>
+                </p>
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight"
-                >
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
                   {slide.title}
-                </motion.h1>
+                </h1>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 mb-6 sm:mb-8 leading-relaxed"
-                >
+                <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 mb-6 sm:mb-8 leading-relaxed">
                   {slide.description}
-                </motion.p>
+                </p>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: currentSlide === index ? 1 : 0, y: currentSlide === index ? 0 : 20 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-                >
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Link
                     href={slide.ctaLink}
-                    className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all text-center"
+                    className="anime-cta-btn inline-block bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:shadow-2xl transition-all text-center"
                   >
                     {slide.cta}
                   </Link>
                   <a
                     href="#tentang"
-                    className="bg-white/20 backdrop-blur-sm border-2 border-white text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:bg-white/30 transition-all text-center"
+                    className="anime-cta-btn bg-white/20 backdrop-blur-sm border-2 border-white text-white px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold hover:bg-white/30 transition-all text-center"
                   >
                     Pelajari Lebih Lanjut
                   </a>
-                </motion.div>
+                </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
 
         {/* Slide Indicators */}
@@ -304,41 +306,27 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
 
         {/* Scroll Indicator */}
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30"
-        >
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center pt-2">
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/80 rounded-full flex justify-center pt-2">
             <div className="w-1 h-2 bg-white rounded-full" />
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* Company Profile Section */}
       <section id="tentang" className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12 sm:mb-16"
-          >
+          <div className="gsap-section-heading text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
               Profil <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Perusahaan</span>
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               Melestarikan tradisi, mengembangkan inovasi, dan memanfaatkan teknologi untuk kemajuan UMKM
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-4 sm:space-y-6"
-            >
+            <div className="gsap-slide-left space-y-4 sm:space-y-6">
               <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">Tentang Kami</h3>
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 Damar Kurung Gresik adalah UMKM yang bergerak dalam bidang kerajinan lentera tradisional khas Gresik.
@@ -351,31 +339,34 @@ export default function Home({ products, events, articles }: HomeProps) {
               </p>
 
               <div className="grid grid-cols-2 gap-6 pt-6">
-                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                  <div className="text-4xl font-bold text-amber-600 mb-2">28+</div>
-                  <div className="text-gray-600">Tahun Berpengalaman</div>
+                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="text-4xl font-bold text-amber-600 mb-2">
+                    <AnimatedCounter target={28} suffix="+" />
+                  </div>
+                  <div className="text-gray-600 text-sm">Tahun Berpengalaman</div>
                 </div>
-                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                  <div className="text-4xl font-bold text-amber-600 mb-2">5000+</div>
-                  <div className="text-gray-600">Produk Terjual</div>
+                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="text-4xl font-bold text-amber-600 mb-2">
+                    <AnimatedCounter target={5000} suffix="+" />
+                  </div>
+                  <div className="text-gray-600 text-sm">Produk Terjual</div>
                 </div>
-                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                  <div className="text-4xl font-bold text-amber-600 mb-2">50+</div>
-                  <div className="text-gray-600">Pengrajin</div>
+                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="text-4xl font-bold text-amber-600 mb-2">
+                    <AnimatedCounter target={50} suffix="+" />
+                  </div>
+                  <div className="text-gray-600 text-sm">Pengrajin</div>
                 </div>
-                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
-                  <div className="text-4xl font-bold text-amber-600 mb-2">100%</div>
-                  <div className="text-gray-600">Handmade</div>
+                <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="text-4xl font-bold text-amber-600 mb-2">
+                    <AnimatedCounter target={100} suffix="%" />
+                  </div>
+                  <div className="text-gray-600 text-sm">Handmade</div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
+            <div className="gsap-slide-right relative">
               <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl">
                 <img
                   src="/images/profile.jpg"
@@ -384,7 +375,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 />
               </div>
               <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl -z-10" />
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -397,27 +388,17 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
+          <div className="gsap-section-heading text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Sejarah <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Damar Kurung</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Menelusuri jejak tradisi lentera nusantara yang telah ada sejak zaman kerajaan
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-6"
-            >
+            <div className="gsap-slide-left space-y-6">
               <div className="prose prose-lg">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Asal Usul</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -453,14 +434,9 @@ export default function Home({ products, events, articles }: HomeProps) {
                   </li>
                 </ul>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-6"
-            >
+            <div className="gsap-slide-right space-y-6">
               {/* Video Profil */}
               <div className="rounded-xl overflow-hidden shadow-2xl">
                 <div className="aspect-video bg-gray-900 relative group">
@@ -496,7 +472,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                   <p className="text-gray-600 text-sm">Menelusuri jejak sejarah panjang Damar Kurung di Indonesia</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Video Edukasi Section
@@ -516,14 +492,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                 { title: "Teknik Pewarnaan", desc: "Mempelajari teknik pewarnaan tradisional" },
                 { title: "Motif & Ornamen", desc: "Mengenal berbagai motif dan maknanya" }
               ].map((video, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
-                  className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
-                >
+                <div className="gsap-card bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow">
                   <div className="aspect-video bg-gray-200 relative group cursor-pointer">
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/50 transition-colors">
                       <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -537,7 +506,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                     <h4 className="font-bold text-lg text-gray-900 mb-2">{video.title}</h4>
                     <p className="text-gray-600 text-sm">{video.desc}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>*/}
@@ -552,31 +521,19 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
+          <div className="gsap-section-heading text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Profile <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Produk</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Koleksi Damar Kurung terbaik dengan berbagai ukuran dan desain
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="gsap-cards-grid grid md:grid-cols-3 gap-8 mb-12">
             {products && products.length > 0 ? (
               products.slice(0, 6).map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
-                >
+                <div key={product.id} className="gsap-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group">
                   <div className="aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                     <img
                       src={product.image}
@@ -604,7 +561,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                       </Link>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))
             ) : (
               <div className="col-span-3 text-center py-12">
@@ -633,31 +590,19 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
+          <div className="gsap-section-heading text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Artikel <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Terbaru</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Bacaan menarik seputar Damar Kurung, budaya, dan kegiatan kreatif
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="gsap-cards-grid grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {articles && articles.length > 0 ? (
               articles.map((article, index) => (
-                <motion.div
-                  key={article.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group h-full flex flex-col"
-                >
+                <div key={article.id} className="gsap-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group h-full flex flex-col">
                   <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                     <img
                       src={article.image}
@@ -694,7 +639,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                     </div>
                   </div>
 
-                </motion.div>
+                </div>
               ))
             ) : (
               <div className="col-span-3 text-center py-12">
@@ -723,31 +668,19 @@ export default function Home({ products, events, articles }: HomeProps) {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
+          <div className="gsap-section-heading text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Event <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Terbaru</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Ikuti berbagai event dan workshop menarik seputar Damar Kurung
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="gsap-cards-grid grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {events && events.length > 0 ? (
               events.slice(0, 3).map((event, index) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: Math.min(index * 0.05, 0.2) }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
-                >
+                <div key={event.id} className="gsap-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group">
                   <div className="aspect-video bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden relative">
                     <img
                       src={event.image}
@@ -803,7 +736,7 @@ export default function Home({ products, events, articles }: HomeProps) {
                       Lihat Detail
                     </Link>
                   </div>
-                </motion.div>
+                </div>
               ))
             ) : (
               <div className="col-span-3 text-center py-12">
