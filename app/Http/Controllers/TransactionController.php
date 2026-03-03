@@ -80,8 +80,7 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            return redirect()
-                ->back()
+            return redirect()->route('user.orders.show', $transaction->id)
                 ->with('success', 'Pesanan berhasil dibuat. Menunggu konfirmasi admin.');
 
         } catch (\Exception $e) {

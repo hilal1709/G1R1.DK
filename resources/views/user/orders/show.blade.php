@@ -34,15 +34,40 @@
 
     <hr>
 
+    @php
+        $adminNumber = "085608767693";
+        $message = "Halo Admin,%0A%0A"
+            . "Saya ingin konfirmasi pesanan:%0A"
+            . "Order: " . $order->order_number . "%0A"
+            . "Status: " . $order->status . "%0A"
+            . "Total: Rp " . number_format($order->total,0,',','.') . "%0A%0A"
+            . "Mohon dibantu ya 🙏";
+    @endphp
+
+    <a href="https://wa.me/{{ $adminNumber }}?text={{ urlencode($message) }}" 
+    target="_blank"
+    >
+        📲 Hubungi Admin via WhatsApp
+    </a>
+
+    <hr>
+
     {{-- ===================== --}}
     {{-- TAMPILKAN BUKTI JIKA ADA --}}
     {{-- ===================== --}}
     @if ($order->bukti_transfer)
         <h4>Bukti Transfer</h4>
         <img src="{{ asset('storage/'.$order->bukti_transfer) }}" 
-             width="300">
+            width="300">
         <hr>
     @endif
+
+    @if (in_array($order->status, ['dikirim','selesai']))
+            <p><strong>Nomor Resi:</strong> {{ $order->resi }}</p>
+            <p><strong>Dikirim Pada:</strong>
+                {{ $order->dikirim_pada ? \Carbon\Carbon::parse($order->dikirim_pada)->format('d M Y H:i') : '-' }}
+            </p>
+        @endif
 
 
     {{-- ===================== --}}
@@ -83,5 +108,5 @@
         </form>
 
     @endif
-
+    
 </div>

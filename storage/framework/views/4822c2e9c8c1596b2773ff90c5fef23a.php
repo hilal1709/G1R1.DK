@@ -38,15 +38,41 @@
 
     <hr>
 
+    <?php
+        $adminNumber = "085608767693";
+        $message = "Halo Admin,%0A%0A"
+            . "Saya ingin konfirmasi pesanan:%0A"
+            . "Order: " . $order->order_number . "%0A"
+            . "Status: " . $order->status . "%0A"
+            . "Total: Rp " . number_format($order->total,0,',','.') . "%0A%0A"
+            . "Mohon dibantu ya 🙏";
+    ?>
+
+    <a href="https://wa.me/<?php echo e($adminNumber); ?>?text=<?php echo e(urlencode($message)); ?>" 
+    target="_blank"
+    >
+        📲 Hubungi Admin via WhatsApp
+    </a>
+
+    <hr>
+
     
     
     
     <?php if($order->bukti_transfer): ?>
         <h4>Bukti Transfer</h4>
         <img src="<?php echo e(asset('storage/'.$order->bukti_transfer)); ?>" 
-             width="300">
+            width="300">
         <hr>
     <?php endif; ?>
+
+    <?php if(in_array($order->status, ['dikirim','selesai'])): ?>
+            <p><strong>Nomor Resi:</strong> <?php echo e($order->resi); ?></p>
+            <p><strong>Dikirim Pada:</strong>
+                <?php echo e($order->dikirim_pada ? \Carbon\Carbon::parse($order->dikirim_pada)->format('d M Y H:i') : '-'); ?>
+
+            </p>
+        <?php endif; ?>
 
 
     
@@ -87,5 +113,5 @@
         </form>
 
     <?php endif; ?>
-
+    
 </div><?php /**PATH D:\me\kuliah\smt V\mpti\G1R1.DK\resources\views/user/orders/show.blade.php ENDPATH**/ ?>
