@@ -381,15 +381,15 @@ const openShopee = (url: string) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     if (product.stok > 0) {
-                                      openWhatsApp(formatQuickOrderMessage(product));
+                                      router.get(`/checkout/${product.id}`, {
+                                        qty: 1,
+                                      });
                                     }
                                   }}
                                   disabled={product.stok === 0}
-                                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
-                                  title="Pesan via WhatsApp"
+                                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white py-2 px-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 transition-all"
                                 >
-                                  <MessageCircle className="w-4 h-4" />
-                                  <span className="hidden sm:inline">WA</span>
+                                  🛒 Pesan
                                 </button>
                                 {product.shopeelink && (
                                   <button
