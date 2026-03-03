@@ -2,7 +2,6 @@
 import { LogOut, ChevronDown, Menu, X, ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { animate, stagger } from 'animejs';
 
 interface PublicNavbarProps {
     activeMenu?: string;
@@ -55,13 +54,13 @@ export default function PublicNavbar({ activeMenu = '' }: PublicNavbarProps) {
         }
     }, []);
 
-    // Animate mobile menu items with anime.js
+    // Animate mobile menu items with GSAP
     useEffect(() => {
         if (!mobileMenuRef.current) return;
         if (showMobileMenu) {
-            anime({ targets: mobileMenuRef.current, translateY: [-20, 0], opacity: [0, 1], duration: 320, easing: 'easeOutCubic' });
+            gsap.fromTo(mobileMenuRef.current, { y: -16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.28, ease: 'power2.out' });
             const items = mobileMenuRef.current.querySelectorAll('.mobile-item');
-            anime({ targets: items, translateX: [-30, 0], opacity: [0, 1], delay: anime.stagger(55, { start: 60 }), duration: 280, easing: 'easeOutCubic' });
+            gsap.fromTo(items, { x: -24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.25, stagger: 0.055, delay: 0.06, ease: 'power2.out' });
         }
     }, [showMobileMenu]);
 
